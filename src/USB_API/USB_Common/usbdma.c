@@ -36,7 +36,7 @@
  */
 #include <string.h>
 
-#include "driverlib.h"
+#include "msp430-driverlib/MSP430F5xx_6xx/driverlib.h"
 
 #include "../USB_Common/device.h"
 #include "../USB_Common/defMSP430USB.h"
@@ -63,6 +63,10 @@ void * memcpyDMA0 (void * dest, const void * source, size_t count);
 void * memcpyDMA1 (void * dest, const void * source, size_t count);
 void * memcpyDMA2 (void * dest, const void * source, size_t count);
 
+void * memcpyV (void * dest, const void * source, size_t count);
+void * memcpyDMA (void * dest, const void *  source, size_t count);
+void USB_initMemcpy (void);
+
 //NOTE: this functin works only with data in the area <64k (small memory model)
 void * memcpyV (void * dest, const void * source, size_t count)
 {
@@ -86,8 +90,8 @@ void * memcpyDMA (void * dest, const void *  source, size_t count)
     //DMA4 workaround - disable DMA transfers during read-modify-write CPU 
     //operations
     DMA_disableTransferDuringReadModifyWrite();
-    DMA_setSrcAddress(USB_DMA_CHAN, (uint32_t)source, DMA_DIRECTION_INCREMENT);
-    DMA_setDstAddress(USB_DMA_CHAN, (uint32_t)dest, DMA_DIRECTION_INCREMENT);
+    DMA_setSrcAddress(USB_DMA_CHAN, (uint32_t)(uintptr_t)source, DMA_DIRECTION_INCREMENT);
+    DMA_setDstAddress(USB_DMA_CHAN, (uint32_t)(uintptr_t)dest, DMA_DIRECTION_INCREMENT);
     //DMA4 workaround - re-enable DMA transfers during read-modify-write CPU 
     //operations
     DMA_enableTransferDuringReadModifyWrite();

@@ -69,8 +69,9 @@ extern void *(*USB_RX_memcpy)(void * dest, const void * source, size_t count);
 extern __no_init tEDB __data16 tInputEndPointDescriptorBlock[];
 extern __no_init tEDB __data16 tOutputEndPointDescriptorBlock[];
 
+void CdcResetData (void);
 
-void CdcResetData ()
+void CdcResetData (void)
 {
     int16_t i;
 
@@ -137,6 +138,8 @@ uint8_t USBCDC_sendData (const uint8_t* data, uint16_t size, uint8_t intfNum)
 
 
 #define EP_MAX_PACKET_SIZE_CDC      0x40
+
+int16_t CdcToHostFromBuffer (uint8_t intfNum);
 
 //this function is used only by USB interrupt
 int16_t CdcToHostFromBuffer (uint8_t intfNum)
@@ -276,6 +279,8 @@ uint8_t USBCDC_abortSend (uint16_t* size, uint8_t intfNum)
     return (USB_SUCCEED);
 }
 
+
+void CopyUsbToBuff (uint8_t* pEP, uint8_t* pCT, uint8_t intfNum);
 
 //This function copies data from OUT endpoint into user's buffer
 //Arguments:
@@ -484,6 +489,8 @@ uint8_t USBCDC_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
     return (USBCDC_RECEIVE_STARTED);
 }
 
+int16_t CdcToBufferFromHost (uint8_t intfNum);
+
 //this function is used only by USB interrupt.
 //It fills user receiving buffer with received data
 int16_t CdcToBufferFromHost (uint8_t intfNum)
@@ -569,6 +576,8 @@ int16_t CdcToBufferFromHost (uint8_t intfNum)
     }
     return (bWakeUp);
 }
+
+int16_t CdcIsReceiveInProgress (uint8_t intfNum);
 
 //helper for USB interrupt handler
 int16_t CdcIsReceiveInProgress (uint8_t intfNum)

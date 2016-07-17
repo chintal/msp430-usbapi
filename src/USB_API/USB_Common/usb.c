@@ -40,7 +40,7 @@
  +----------------------------------------------------------------------------*/
 
 #include <string.h>
-#include "driverlib.h"
+#include <msp430-driverlib/MSP430F5xx_6xx/driverlib.h>
 
 #include "../USB_Common/device.h"
 #include "../USB_Common/defMSP430USB.h"
@@ -77,8 +77,10 @@
 #define DIRECTION_OUT   0x00
 
 #if defined(__TI_COMPILER_VERSION__)  || defined(__GNUC__)
-#define __no_init
+#define __no_init_usb
 #define __data16
+#else
+#define __no_init_usb   __no_init
 #endif
 
 /*----------------------------------------------------------------------------+
@@ -117,7 +119,7 @@ static uint8_t bHostAskMoreDataThanAvailable = 0;
 uint8_t abUsbRequestReturnData[USB_RETURN_DATA_LENGTH];
 uint8_t abUsbRequestIncomingData[USB_RETURN_DATA_LENGTH];
 
-__no_init uint8_t abramSerialStringDescriptor[34];
+__no_init_usb uint8_t abramSerialStringDescriptor[34];
 
 uint8_t bStatusAction;
 uint8_t bFunctionSuspended = FALSE;    //TRUE if function is suspended
@@ -129,7 +131,7 @@ uint16_t wUsbEventMask;                 //used by USB_getEnabledEvents() and USB
 
 #ifdef _MSC_
 extern uint8_t USBMSC_reset (void);
-void MscResetData ();
+void MscResetData (void);
 extern struct _MscState MscState;
 #endif
 
@@ -152,150 +154,152 @@ uint8_t activeInterfaceIndex = 0;
 #ifdef __IAR_SYSTEMS_ICC__
 
 #pragma location = 0x2380
-__no_init tDEVICE_REQUEST __data16 tSetupPacket;
+__no_init_usb tDEVICE_REQUEST __data16 tSetupPacket;
 
 #pragma location = 0x0920
-__no_init tEDB0 __data16 tEndPoint0DescriptorBlock;
+__no_init_usb tEDB0 __data16 tEndPoint0DescriptorBlock;
 
 #pragma location = 0x23C8
-__no_init tEDB __data16 tInputEndPointDescriptorBlock[7];
+__no_init_usb tEDB __data16 tInputEndPointDescriptorBlock[7];
 
 #pragma location = 0x2388
-__no_init tEDB __data16 tOutputEndPointDescriptorBlock[7];
+__no_init_usb tEDB __data16 tOutputEndPointDescriptorBlock[7];
 
 #pragma location = 0x2378
-__no_init uint8_t __data16 abIEP0Buffer[EP0_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 abIEP0Buffer[EP0_MAX_PACKET_SIZE];
 
 #pragma location = 0x2370
-__no_init uint8_t __data16 abOEP0Buffer[EP0_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 abOEP0Buffer[EP0_MAX_PACKET_SIZE];
 
 #pragma location = OEP1_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp1[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp1[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP1_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp1[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp1[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP1_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp81[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp81[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP1_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp81[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp81[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP2_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp2[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp2[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP2_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp2[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp2[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP2_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp82[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp82[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP2_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp82[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp82[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP3_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp3[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp3[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP3_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp3[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp3[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP3_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp83[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp83[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP3_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp83[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp83[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP4_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp4[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp4[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP4_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp4[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp4[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP4_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp84[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp84[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP4_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp84[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp84[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP5_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp5[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp5[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP5_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp5[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp5[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP5_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp85[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp85[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP5_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp85[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp85[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP6_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp6[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp6[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP6_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp6[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp6[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP6_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp86[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp86[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP6_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp86[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp86[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP7_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp7[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp7[EP_MAX_PACKET_SIZE];
 
 #pragma location = OEP7_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp7[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp7[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP7_X_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbXBufferAddressEp87[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbXBufferAddressEp87[EP_MAX_PACKET_SIZE];
 
 #pragma location = IEP7_Y_BUFFER_ADDRESS
-__no_init uint8_t __data16 pbYBufferAddressEp87[EP_MAX_PACKET_SIZE];
+__no_init_usb uint8_t __data16 pbYBufferAddressEp87[EP_MAX_PACKET_SIZE];
 
 
 
 #endif
 
 #if defined(__TI_COMPILER_VERSION__)  || defined(__GNUC__)
-extern __no_init tDEVICE_REQUEST tSetupPacket;
-extern __no_init tEDB0 tEndPoint0DescriptorBlock;
-extern __no_init tEDB tInputEndPointDescriptorBlock[7];
-extern __no_init tEDB tOutputEndPointDescriptorBlock[7];
-extern __no_init uint8_t abIEP0Buffer[EP0_MAX_PACKET_SIZE];
-extern __no_init uint8_t abOEP0Buffer[EP0_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbXBufferAddressEp1[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp1[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbXBufferAddressEp81[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp81[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbXBufferAddressEp2[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp2[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbXBufferAddressEp82[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp82[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbXBufferAddressEp3[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp3[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbXBufferAddressEp83[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp83[EP_MAX_PACKET_SIZE];
+extern __no_init_usb tDEVICE_REQUEST tSetupPacket;
+extern __no_init_usb tEDB0 tEndPoint0DescriptorBlock;
+extern __no_init_usb tEDB tInputEndPointDescriptorBlock[7];
+extern __no_init_usb tEDB tOutputEndPointDescriptorBlock[7];
+extern __no_init_usb uint8_t abIEP0Buffer[EP0_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t abOEP0Buffer[EP0_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp1[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp1[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp81[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp81[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp2[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp2[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp82[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp82[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp3[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp3[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp83[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp83[EP_MAX_PACKET_SIZE];
 
-extern __no_init uint8_t pbXBufferAddressEp4[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp4[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbXBufferAddressEp84[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp84[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp4[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp4[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp84[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp84[EP_MAX_PACKET_SIZE];
 
-extern __no_init uint8_t pbXBufferAddressEp5[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp5[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbXBufferAddressEp85[EP_MAX_PACKET_SIZE];
-extern __no_init uint8_t pbYBufferAddressEp85[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp5[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp5[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbXBufferAddressEp85[EP_MAX_PACKET_SIZE];
+extern __no_init_usb uint8_t pbYBufferAddressEp85[EP_MAX_PACKET_SIZE];
 
 #endif
 
-void CdcResetData ();
-void HidResetData ();
-void PHDCResetData();
+void CdcResetData (void);
+void HidResetData (void);
+void PHDCResetData(void);
 
 void USB_InitSerialStringDescriptor (void);
 void USB_initMemcpy (void);
 uint16_t USB_determineFreq(void);
+
+char *USB_getVersion(void);
 
 /* Version string to embed in executable. May need to change for ELF compiler */
 const char *VERSION = "USB_DEVELOPERS_PACKAGE_5_10_00_17";
@@ -866,7 +870,7 @@ uint8_t USB_forceRemoteWakeup ()
         return (USB_NOT_SUSPENDED);
     }
     if (bRemoteWakeup == ENABLE){
-        volatile uint16_t i;
+        
         USBCTL |= RWUP;                                                             //USB - Device Remote Wakeup Request - this bit
                                                                                     //is self-cleaned
         return (USB_SUCCEED);
@@ -1612,7 +1616,7 @@ uint8_t usbDecodeAndProcessUsbRequest (void)
 
     //now we found the match and jump to the function accordingly.
     lAddrOfFunction =
-        ((tDEVICE_REQUEST_COMPARE*)pbUsbRequestList)->pUsbFunction;
+        ((tDEVICE_REQUEST_COMPARE*)((void*)pbUsbRequestList))->pUsbFunction;
 
     //call function
     bWakeUp = (*lAddrOfFunction)();
@@ -1658,7 +1662,7 @@ uint8_t USB_switchInterface(uint8_t interfaceIndex)
 #endif
 
 uint16_t USB_determineFreq(void){
-    uint16_t freq;                  // calculated MCLK freq in kHz
+    uint16_t freq = 0;                  // calculated MCLK freq in kHz
     uint16_t currentFLLN;           // value of divider N taken from UCS registers
     uint8_t currentSELM;           // MCLK reference taken from UCS registers
     uint8_t currentFLLREFDIV;      // value of divider n taken from UCS registers

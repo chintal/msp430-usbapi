@@ -111,8 +111,8 @@ extern "C"
 uint8_t USBMSC_pollCommand(void);
 
 /* MSC functions */
-int16_t MSCToHostFromBuffer ();
-int16_t MSCFromHostToBuffer ();
+int16_t MSCToHostFromBuffer (void);
+int16_t MSCFromHostToBuffer (void);
 //*****************************************************************************
 //
 //! This function should be called by the application after it has processed a buffer request.
@@ -130,7 +130,7 @@ int16_t MSCFromHostToBuffer ();
 //
 //*****************************************************************************
 uint8_t USBMSC_processBuffer(void);
-uint8_t USBMSC_getState ();
+uint8_t USBMSC_getState (void);
 //*****************************************************************************
 //
 //! Informs the API of the Current State of the Media on LUN \b lun.

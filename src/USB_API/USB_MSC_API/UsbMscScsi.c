@@ -48,7 +48,6 @@
 #include "../USB_Common/usb.h"
 #include "../USB_MSC_API/UsbMscScsi.h"
 #include "../USB_MSC_API/UsbMsc.h"
-#include "../hal.h"
 #include <descriptors.h>
 #include <string.h>
 

@@ -85,7 +85,7 @@ uint8_t hidIdleRate[HID_NUM_INTERFACES] = {0};
 extern __no_init tEDB __data16 tInputEndPointDescriptorBlock[];
 extern __no_init tEDB __data16 tOutputEndPointDescriptorBlock[];
 
-
+void HidResetData (void);
 void HidCopyUsbToBuff (uint8_t* pEP, uint8_t* pCT, uint8_t);
 
 /*----------------------------------------------------------------------------+
@@ -93,7 +93,7 @@ void HidCopyUsbToBuff (uint8_t* pEP, uint8_t* pCT, uint8_t);
  +----------------------------------------------------------------------------*/
 
 //resets internal HID data structure
-void HidResetData ()
+void HidResetData (void)
 {
     int16_t i;
 
@@ -278,6 +278,7 @@ uint8_t USBHID_sendData (const uint8_t* data, uint16_t size, uint8_t intfNum)
     return (USBHID_SEND_STARTED);
 }
 
+int16_t HidToHostFromBuffer (uint8_t intfNum);
 
 //this function is used only by USB interrupt
 int16_t HidToHostFromBuffer (uint8_t intfNum)
@@ -610,6 +611,7 @@ uint8_t USBHID_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
     return (USBHID_RECEIVE_STARTED);
 }
 
+int16_t HidToBufferFromHost (uint8_t intfNum);
 
 //this function is used only by USB interrupt.
 //It fills user receiving buffer with received data
@@ -706,6 +708,8 @@ int16_t HidToBufferFromHost (uint8_t intfNum)
     }
     return (bWakeUp);
 }
+
+int16_t HidIsReceiveInProgress (uint8_t intfNum);
 
 //helper for USB interrupt handler
 int16_t HidIsReceiveInProgress (uint8_t intfNum)

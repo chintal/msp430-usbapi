@@ -44,8 +44,10 @@ extern "C"
  | Constant Definition                                                         |
  +----------------------------------------------------------------------------*/
 #if defined(__TI_COMPILER_VERSION__)  || defined(__GNUC__)
-#define __no_init
+#define __no_init_usb
 #define __data16
+#else
+#define __no_init_usb   __no_init
 #endif
 
 /*----------------------------------------------------------------------------
@@ -229,43 +231,43 @@ typedef struct _tDEVICE_REQUEST {
     uint16_t wLength;               //Number of bytes of data to transfer
 } tDEVICE_REQUEST, *ptDEVICE_REQUEST;
 
-extern __no_init tDEVICE_REQUEST __data16 tSetupPacket;
-extern __no_init uint8_t __data16 abIEP0Buffer[];
-extern __no_init uint8_t __data16 abOEP0Buffer[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp1[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp1[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp81[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp81[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp2[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp2[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp82[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp82[];
+extern __no_init_usb tDEVICE_REQUEST __data16 tSetupPacket;
+extern __no_init_usb uint8_t __data16 abIEP0Buffer[];
+extern __no_init_usb uint8_t __data16 abOEP0Buffer[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp1[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp1[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp81[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp81[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp2[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp2[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp82[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp82[];
 
-extern __no_init uint8_t __data16 pbXBufferAddressEp3[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp3[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp83[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp83[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp3[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp3[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp83[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp83[];
 
-extern __no_init uint8_t __data16 pbXBufferAddressEp4[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp4[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp84[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp84[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp4[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp4[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp84[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp84[];
 
-extern __no_init uint8_t __data16 pbXBufferAddressEp5[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp5[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp85[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp85[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp5[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp5[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp85[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp85[];
 
 
-extern __no_init uint8_t __data16 pbXBufferAddressEp6[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp6[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp86[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp86[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp6[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp6[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp86[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp86[];
 
-extern __no_init uint8_t __data16 pbXBufferAddressEp7[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp7[];
-extern __no_init uint8_t __data16 pbXBufferAddressEp87[];
-extern __no_init uint8_t __data16 pbYBufferAddressEp87[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp7[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp7[];
+extern __no_init_usb uint8_t __data16 pbXBufferAddressEp87[];
+extern __no_init_usb uint8_t __data16 pbYBufferAddressEp87[];
 
 extern uint16_t wBytesRemainingOnIEP0;
 extern uint16_t wBytesRemainingOnOEP0;
@@ -422,7 +424,7 @@ uint8_t USB_setup(uint8_t connectEnable, uint8_t eventsEnable);
 //! \return \b USB_SUCCEED
 //
 //*****************************************************************************
-uint8_t USB_enable ();
+uint8_t USB_enable (void);
 
 #ifdef USE_TIMER_FOR_RESUME
 
@@ -551,7 +553,7 @@ uint8_t USB_setEnabledEvents (uint16_t events);
 //! \return \b Events
 //
 //*****************************************************************************
-uint16_t USB_getEnabledEvents ();
+uint16_t USB_getEnabledEvents (void);
 
 //*****************************************************************************
 //
@@ -564,7 +566,7 @@ uint16_t USB_getEnabledEvents ();
 //! \return \b USB_SUCCEED
 //
 //*****************************************************************************
-uint8_t USB_connect ();
+uint8_t USB_connect (void);
 
 
 
@@ -580,7 +582,7 @@ uint8_t USB_connect ();
 //! \return \b USB_SUCCEED
 //
 //*****************************************************************************
-uint8_t USB_disconnect ();
+uint8_t USB_disconnect (void);
 //*****************************************************************************
 //
 //! Resets the USB Module and the Internal State of the API.
@@ -596,7 +598,7 @@ uint8_t USB_disconnect ();
 //! \return \b USB_SUCCEED
 //
 //*****************************************************************************
-uint8_t USB_reset ();
+uint8_t USB_reset (void);
 
 /**
  * Suspend USB.
@@ -624,7 +626,7 @@ uint8_t USB_resume(void);
 //! \return \b USB_SUCCEED, \b kUSBgeneralError or \b kUSB_notSuspended.
 //
 //*****************************************************************************
-uint8_t USB_forceRemoteWakeup ();
+uint8_t USB_forceRemoteWakeup (void);
 
 //*****************************************************************************
 //
@@ -644,7 +646,7 @@ uint8_t USB_forceRemoteWakeup ();
 //! 				- \b USB_VBUS_PRESENT
 //
 //*****************************************************************************
-uint8_t USB_getConnectionInformation ();
+uint8_t USB_getConnectionInformation (void);
 
 //*****************************************************************************
 //
@@ -663,7 +665,7 @@ uint8_t USB_getConnectionInformation ();
 //! 			- \b ST_ERROR.
 //
 //*****************************************************************************
-uint8_t USB_getConnectionState ();
+uint8_t USB_getConnectionState (void);
 
 #ifdef NON_COMPOSITE_MULTIPLE_INTERFACES
 /*
@@ -708,7 +710,7 @@ uint8_t USB_switchInterface(uint8_t interfaceIndex);
 //
 //******************************************************************************
 
-uint8_t USB_handleClockEvent ();
+uint8_t USB_handleClockEvent (void);
 
 //*****************************************************************************
 //
@@ -729,7 +731,7 @@ uint8_t USB_handleClockEvent ();
 //! \return TRUE to keep CPU awake
 //
 //*****************************************************************************
-uint8_t USB_handleVbusOnEvent ();
+uint8_t USB_handleVbusOnEvent (void);
 
 //*****************************************************************************
 //
@@ -752,7 +754,7 @@ uint8_t USB_handleVbusOnEvent ();
 //! \return TRUE to keep CPU awake
 //
 //*****************************************************************************
-uint8_t USB_handleVbusOffEvent ();
+uint8_t USB_handleVbusOffEvent (void);
 
 //*****************************************************************************
 //
@@ -767,7 +769,7 @@ uint8_t USB_handleVbusOffEvent ();
 //! \return TRUE
 //
 //*****************************************************************************
-uint8_t USB_handleResetEvent ();
+uint8_t USB_handleResetEvent (void);
 
 //*****************************************************************************
 //
@@ -787,7 +789,7 @@ uint8_t USB_handleResetEvent ();
 //! \returns TRUE so that the main loop can adapt.
 //
 //*****************************************************************************
-uint8_t USB_handleSuspendEvent ();
+uint8_t USB_handleSuspendEvent (void);
 
 //*****************************************************************************
 //
@@ -805,7 +807,7 @@ uint8_t USB_handleSuspendEvent ();
 //! \return TRUE
 //
 //*****************************************************************************
-uint8_t USB_handleResumeEvent ();
+uint8_t USB_handleResumeEvent (void);
 
 //*****************************************************************************
 //
@@ -820,7 +822,7 @@ uint8_t USB_handleResumeEvent ();
 //! \return TRUE
 //
 //*****************************************************************************
-uint8_t USB_handleEnumerationCompleteEvent ();
+uint8_t USB_handleEnumerationCompleteEvent (void);
 
 #ifdef USE_TIMER_FOR_RESUME
 /*
