@@ -40,70 +40,48 @@
 extern "C"
 {
 #endif
+    
+#include <descriptors.h>
 
 
-/*----------------------------------------------------------------------------
- * The following function names and macro names are deprecated.  These were 
- * updated to new names to follow OneMCU naming convention.
- +---------------------------------------------------------------------------*/
-#ifndef DEPRECATED
-#define  kUSBCDC_sendStarted            USBCDC_SEND_STARTED
-#define  kUSBCDC_sendComplete           USBCDC_SEND_COMPLETE
-#define  kUSBCDC_intfBusyError          USBCDC_INTERFACE_BUSY_ERROR
-#define  kUSBCDC_receiveStarted         USBCDC_RECEIVE_STARTED
-#define  kUSBCDC_receiveCompleted       USBCDC_RECEIVE_COMPLETED
-#define  kUSBCDC_receiveInProgress      USBCDC_RECEIVE_IN_PROGRESS
-#define  kUSBCDC_generalError           USBCDC_GENERAL_ERROR
-#define  kUSBCDC_busNotAvailable        USBCDC_BUS_NOT_AVAILABLE
-#define  kUSBCDC_waitingForSend         USBCDC_WAITING_FOR_SEND
-#define  kUSBCDC_waitingForReceive      USBCDC_WAITING_FOR_RECEIVE
-#define  kUSBCDC_dataWaiting            USBCDC_DATA_WAITING
-#define  kUSB_allCdcEvents              USBCDC_ALL_CDC_EVENTS
-#define  kUSBCDC_noDataWaiting          USBCDC_NO_DATA_WAITING
-
-#define USBCDC_intfStatus               USBCDC_getInterfaceStatus
-#define USBCDC_bytesInUSBBuffer         USBCDC_getBytesInUSBBuffer
-#endif
-
-
-#define USBCDC_SEND_STARTED         0x01
-#define USBCDC_SEND_COMPLETE        0x02
-#define USBCDC_INTERFACE_BUSY_ERROR       0x03
-#define USBCDC_RECEIVE_STARTED      0x04
-#define USBCDC_RECEIVE_COMPLETED    0x05
-#define USBCDC_RECEIVE_IN_PROGRESS   0x06
-#define USBCDC_GENERAL_ERROR        0x07
-#define USBCDC_BUS_NOT_AVAILABLE     0x08
+#define USBCDC_SEND_STARTED             0x01
+#define USBCDC_SEND_COMPLETE            0x02
+#define USBCDC_INTERFACE_BUSY_ERROR     0x03
+#define USBCDC_RECEIVE_STARTED          0x04
+#define USBCDC_RECEIVE_COMPLETED        0x05
+#define USBCDC_RECEIVE_IN_PROGRESS      0x06
+#define USBCDC_GENERAL_ERROR            0x07
+#define USBCDC_BUS_NOT_AVAILABLE        0x08
 //returned by USBCDC_rejectData() if no data pending
-#define USBCDC_NO_DATA_WAITING        0X01
-#define USBCDC_WAITING_FOR_SEND      0x01
-#define USBCDC_WAITING_FOR_RECEIVE   0x02
-#define USBCDC_DATA_WAITING         0x04
-#define USBCDC_BUS_NOT_AVAILABLE     0x08
+#define USBCDC_NO_DATA_WAITING          0X01
+#define USBCDC_WAITING_FOR_SEND         0x01
+#define USBCDC_WAITING_FOR_RECEIVE      0x02
+#define USBCDC_DATA_WAITING             0x04
+#define USBCDC_BUS_NOT_AVAILABLE        0x08
 #define USBCDC_ALL_CDC_EVENTS           0xFF
 
 
 #ifdef _CDC_
 struct _CdcWrite {
-    uint16_t nCdcBytesToSend;                       //holds counter of bytes to be sent
-    uint16_t nCdcBytesToSendLeft;                   //holds counter how many bytes is still to be sent
-    const uint8_t* pUsbBufferToSend;               //holds the buffer with data to be sent
-    uint8_t bCurrentBufferXY;                      //is 0 if current buffer to write data is X, or 1 if current buffer is Y
-    uint8_t bZeroPacketSent;                       //= FALSE;
+    uint16_t nCdcBytesToSend;           //holds counter of bytes to be sent
+    uint16_t nCdcBytesToSendLeft;       //holds counter how many bytes is still to be sent
+    const uint8_t* pUsbBufferToSend;    //holds the buffer with data to be sent
+    uint8_t bCurrentBufferXY;           //is 0 if current buffer to write data is X, or 1 if current buffer is Y
+    uint8_t bZeroPacketSent;            //= FALSE;
     uint8_t last_ByteSend;
 } CdcWriteCtrl[CDC_NUM_INTERFACES];
 
 struct _CdcRead {
-    uint8_t *pUserBuffer;                          //holds the current position of user's receiving buffer. If NULL- no receiving
-                                                //operation started
-    uint8_t *pCurrentEpPos;                        //current positon to read of received data from curent EP
-    uint16_t nBytesToReceive;                       //holds how many bytes was requested by receiveData() to receive
-    uint16_t nBytesToReceiveLeft;                   //holds how many bytes is still requested by receiveData() to receive
-    uint8_t * pCT1;                                //holds current EPBCTxx register
-    uint8_t * pCT2;                                //holds next EPBCTxx register
-    uint8_t * pEP2;                                //holds addr of the next EP buffer
-    uint8_t nBytesInEp;                            //how many received bytes still available in current EP
-    uint8_t bCurrentBufferXY;                      //indicates which buffer is used by host to transmit data via OUT endpoint3
+    uint8_t *pUserBuffer;                //holds the current position of user's receiving buffer. If NULL- no receiving
+                                         //operation started
+    uint8_t *pCurrentEpPos;              //current positon to read of received data from curent EP
+    uint16_t nBytesToReceive;            //holds how many bytes was requested by receiveData() to receive
+    uint16_t nBytesToReceiveLeft;        //holds how many bytes is still requested by receiveData() to receive
+    uint8_t * pCT1;                      //holds current EPBCTxx register
+    uint8_t * pCT2;                      //holds next EPBCTxx register
+    uint8_t * pEP2;                      //holds addr of the next EP buffer
+    uint8_t nBytesInEp;                  //how many received bytes still available in current EP
+    uint8_t bCurrentBufferXY;            //indicates which buffer is used by host to transmit data via OUT endpoint3
 } CdcReadCtrl[CDC_NUM_INTERFACES];
 
 #endif

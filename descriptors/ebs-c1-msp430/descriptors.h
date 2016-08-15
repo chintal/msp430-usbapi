@@ -63,7 +63,7 @@ extern "C"
 // Configuration Constants that can change
 // #define that relates to Device Descriptor
 #define USB_VID               0x2047    // Vendor ID (VID)
-#define USB_PID               0x0992    // Product ID (PID)
+#define USB_PID               0x0992        // Product ID (PID)
 
 /*----------------------------------------------------------------------------+
 | Firmware Version                                                            |
@@ -71,79 +71,79 @@ extern "C"
 | on Windows Open ControlPanel->Systems->Hardware->DeviceManager->Ports->     |
 |         Msp430->ApplicationUART->Details                                    |
 +----------------------------------------------------------------------------*/
-#define VER_FW_H              0x02      // Device release number, in binary-coded decimal
-#define VER_FW_L              0x00      // Device release number, in binary-coded decimal
+#define VER_FW_H              0x02          // Device release number, in binary-coded decimal
+#define VER_FW_L              0x00          // Device release number, in binary-coded decimal
 
 // If a serial number is to be reported, set this to the index within the string descriptor
 //of the dummy serial number string.  It will then be automatically handled by the API.
 // If no serial number is to be reported, set this to 0.
-#define USB_STR_INDEX_SERNUM               3
-#define PHDC_ENDPOINTS_NUMBER              2  // bulk in, bulk out
+#define USB_STR_INDEX_SERNUM  3
+#define PHDC_ENDPOINTS_NUMBER               2  // bulk in, bulk out
 
 
 #define DESCRIPTOR_TOTAL_LENGTH            207            // wTotalLength, This is the sum of configuration descriptor length  + CDC descriptor length  + HID descriptor length
-#define USB_NUM_INTERFACES                 6              //Number of implemented interfaces.
+#define USB_NUM_INTERFACES                  6            //Number of implemented interfaces.
 
 #define CDC0_COMM_INTERFACE                0              // Comm interface number of CDC0
 #define CDC0_DATA_INTERFACE                1              // Data interface number of CDC0
-#define CDC0_INTEP_ADDR                    0x81           // Interrupt Endpoint Address of CDC0
-#define CDC0_OUTEP_ADDR                    0x02           // Output Endpoint Address of CDC0
-#define CDC0_INEP_ADDR                     0x82           // Input Endpoint Address of CDC0
+#define CDC0_INTEP_ADDR                    0x81              // Interrupt Endpoint Address of CDC0
+#define CDC0_OUTEP_ADDR                    0x02              // Output Endpoint Address of CDC0
+#define CDC0_INEP_ADDR                    0x82              // Input Endpoint Address of CDC0
 
 #define CDC1_COMM_INTERFACE                2              // Comm interface number of CDC1
 #define CDC1_DATA_INTERFACE                3              // Data interface number of CDC1
-#define CDC1_INTEP_ADDR                    0x83           // Interrupt Endpoint Address of CDC1
-#define CDC1_OUTEP_ADDR                    0x04           // Output Endpoint Address of CDC1
-#define CDC1_INEP_ADDR                     0x84           // Input Endpoint Address of CDC1
+#define CDC1_INTEP_ADDR                    0x83              // Interrupt Endpoint Address of CDC1
+#define CDC1_OUTEP_ADDR                    0x04              // Output Endpoint Address of CDC1
+#define CDC1_INEP_ADDR                    0x84              // Input Endpoint Address of CDC1
 
 #define CDC2_COMM_INTERFACE                4              // Comm interface number of CDC2
 #define CDC2_DATA_INTERFACE                5              // Data interface number of CDC2
-#define CDC2_INTEP_ADDR                    0x85           // Interrupt Endpoint Address of CDC2
-#define CDC2_OUTEP_ADDR                    0x06           // Output Endpoint Address of CDC2
-#define CDC2_INEP_ADDR                     0x86           // Input Endpoint Address of CDC2
+#define CDC2_INTEP_ADDR                    0x85              // Interrupt Endpoint Address of CDC2
+#define CDC2_OUTEP_ADDR                    0x06              // Output Endpoint Address of CDC2
+#define CDC2_INEP_ADDR                    0x86              // Input Endpoint Address of CDC2
 
-#define CDC_NUM_INTERFACES                   3            //  Total Number of CDCs implemented. should set to 0 if there are no CDCs implemented.
-#define HID_NUM_INTERFACES                   0            //  Total Number of HIDs implemented. should set to 0 if there are no HIDs implemented.
-#define MSC_NUM_INTERFACES                   0            //  Total Number of MSCs implemented. should set to 0 if there are no MSCs implemented.
-#define PHDC_NUM_INTERFACES                  0            //  Total Number of PHDCs implemented. should set to 0 if there are no PHDCs implemented.
+#define CDC_NUM_INTERFACES                   3           //  Total Number of CDCs implemented. should set to 0 if there are no CDCs implemented.
+#define HID_NUM_INTERFACES                   0           //  Total Number of HIDs implemented. should set to 0 if there are no HIDs implemented.
+#define MSC_NUM_INTERFACES                   0           //  Total Number of MSCs implemented. should set to 0 if there are no MSCs implemented.
+#define PHDC_NUM_INTERFACES                  0           //  Total Number of PHDCs implemented. should set to 0 if there are no PHDCs implemented.
 // Interface numbers for the implemented CDSs and HIDs, This is to use in the Application(main.c) and in the interupt file(UsbIsr.c).
-#define CDC0_INTFNUM                         0
-#define CDC1_INTFNUM                         1
-#define CDC2_INTFNUM                         2
+#define CDC0_INTFNUM                0
+#define CDC1_INTFNUM                1
+#define CDC2_INTFNUM                2
 #define MSC_MAX_LUN_NUMBER                   1           // Maximum number of LUNs supported
 
-#define PUTWORD(x)                ((x)&0xFF),((x)>>8)
-#define USB_OUTEP_INT_EN          BIT0 | BIT2 | BIT4 | BIT6 
-#define USB_INEP_INT_EN           BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 
-#define USB_USE_INTERNAL_3V3LDO   TRUE
-#define USB_XT2_BYPASS_MODE       FALSE
+#define PUTWORD(x)      ((x)&0xFF),((x)>>8)
+#define USB_OUTEP_INT_EN BIT0 | BIT2 | BIT4 | BIT6 
+#define USB_INEP_INT_EN BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 
+#define USB_USE_INTERNAL_3V3LDO TRUE
+#define USB_XT2_BYPASS_MODE FALSE
 
 
 // MCLK frequency of MCU, in Hz
 // For running higher frequencies the Vcore voltage adjustment may required.
 // Please refer to Data Sheet of the MSP430 device you use
-#define USB_PLL_XT                  2     // Defines which XT is used by the PLL (1=XT1, 2=XT2)
-#define USB_XT_FREQ_VALUE           4.0   // Indicates the freq of the crystal on the oscillator indicated by USB_PLL_XT
-#define USB_XT_FREQ   USBPLL_SETCLK_4_0   // Indicates the freq of the crystal on the oscillator indicated by USB_PLL_XT
-#define USB_DISABLE_XT_SUSPEND      0     // If non-zero, then USB_suspend() will disable the oscillator
-                                          // that is designated by USB_PLL_XT; if zero, USB_suspend won't
-                                          // affect the oscillator
-#define USB_DMA_CHAN      DMA_CHANNEL_0   // Set to 0xFF if no DMA channel will be used 0..7 for selected DMA channel
+#define USB_PLL_XT        2                  // Defines which XT is used by the PLL (1=XT1, 2=XT2)
+#define USB_XT_FREQ_VALUE       4.0   // Indicates the freq of the crystal on the oscillator indicated by USB_PLL_XT
+#define USB_XT_FREQ       USBPLL_SETCLK_4_0  // Indicates the freq of the crystal on the oscillator indicated by USB_PLL_XT
+#define USB_DISABLE_XT_SUSPEND 0             // If non-zero, then USB_suspend() will disable the oscillator
+                                             // that is designated by USB_PLL_XT; if zero, USB_suspend won't
+                                             // affect the oscillator
+#define USB_DMA_CHAN           DMA_CHANNEL_0   // Set to 0xFF if no DMA channel will be used 0..7 for selected DMA channel
 
 // Controls whether the remote wakeup feature is supported by this device.
 // A value of 0x20 indicates that is it supported (this value is the mask for
 // the bmAttributes field in the configuration descriptor).
 // A value of zero indicates remote wakeup is not supported.
 // Other values are undefined, as they will interfere with bmAttributes.
-#define USB_SUPPORT_REM_WAKE        0x00
+#define USB_SUPPORT_REM_WAKE 0x00
 // Controls whether the application is self-powered to any degree.  Should be
 // set to 0x40, unless the USB device is fully supplied by the bus.
-#define USB_SUPPORT_SELF_POWERED    0xc0
+#define USB_SUPPORT_SELF_POWERED 0xc0
 
 // Controls what the device reports to the host regarding how much power it will
 // consume from VBUS.  Expressed in 2mA units; that is, the number of mA
 // communicated is twice the value of this field.
-#define USB_MAX_POWER               0x7d
+#define USB_MAX_POWER 0x7d
 //Configuration constants that can not change ( Fixed Values)
 #define CDC_CLASS  2
 #define HID_CLASS  3
@@ -155,13 +155,13 @@ extern "C"
 //***********************************************************************************************
 // DESCRIPTOR CONSTANTS
 //***********************************************************************************************
-#define SIZEOF_DEVICE_DESCRIPTOR       0x12
-#define MAX_STRING_DESCRIPTOR_INDEX    7
+#define SIZEOF_DEVICE_DESCRIPTOR  0x12
+#define MAX_STRING_DESCRIPTOR_INDEX 7
 //#define SIZEOF_REPORT_DESCRIPTOR  36
 //#define USBHID_REPORT_LENGTH      64  // length of whole HID report (including Report ID)
-#define CONFIG_STRING_INDEX            4
-#define INTF_STRING_INDEX              5
-#define USB_CONFIG_VALUE               0x01
+#define CONFIG_STRING_INDEX       4
+#define INTF_STRING_INDEX         5
+#define USB_CONFIG_VALUE          0x01
 //***********************************************************************************************
 // OUTWARD DECLARATIONS
 //***********************************************************************************************
@@ -173,13 +173,13 @@ extern "C"
 struct abromConfigurationDescriptorGenric
 {
     uint8_t sizeof_config_descriptor;            // bLength
-    uint8_t desc_type_config;                    // bDescriptorType: 2
+     uint8_t desc_type_config;                    // bDescriptorType: 2
     uint8_t sizeof_configuration_descriptor1;    // wTotalLength
     uint8_t sizeof_configuration_descriptor2;
     uint8_t usb_num_configurations;              // bNumInterfaces
     uint8_t bconfigurationvalue;                 // bConfigurationValue
     uint8_t  config_string_index;                // iConfiguration Description offset
-    uint8_t mattributes;                         // bmAttributes, bus power, remote wakeup
+     uint8_t mattributes;                         // bmAttributes, bus power, remote wakeup
     uint8_t usb_max_power;                       // Max. Power Consumption at 2mA unit
 };
 
@@ -353,22 +353,22 @@ struct  abromConfigurationDescriptorGroup
 {
     /* Generic part of config descriptor */
     const struct abromConfigurationDescriptorGenric abromConfigurationDescriptorGenric;
-    #ifdef _MSC_
-        /* MSC descriptor structure */
-        const struct abromConfigurationDescriptorMsc stMsc[MSC_NUM_INTERFACES];
-    #endif
-    #ifdef _CDC_ 
-        /* CDC descriptor structure */
-        const struct abromConfigurationDescriptorCdc stCdc[CDC_NUM_INTERFACES];
-    #endif
-    #ifdef _HID_
-        /* HID descriptor structure */
-        const struct abromConfigurationDescriptorHid stHid[HID_NUM_INTERFACES];
-    #endif
-    #ifdef _PHDC_
-        /* PDC descriptor structure */
-        const struct abromConfigurationDescriptorPhdc stPhdc[PHDC_NUM_INTERFACES];
-    #endif
+#ifdef _MSC_
+    /* MSC descriptor structure */
+    const struct abromConfigurationDescriptorMsc stMsc[MSC_NUM_INTERFACES];
+#endif
+#ifdef _CDC_ 
+    /* CDC descriptor structure */
+    const struct abromConfigurationDescriptorCdc stCdc[CDC_NUM_INTERFACES];
+#endif
+#ifdef _HID_
+    /* HID descriptor structure */
+    const struct abromConfigurationDescriptorHid stHid[HID_NUM_INTERFACES];
+#endif
+#ifdef _PHDC_
+/* PDC descriptor structure */
+    const struct abromConfigurationDescriptorPhdc stPhdc[PHDC_NUM_INTERFACES];
+#endif
 };
 
 extern const struct  abromConfigurationDescriptorGroup abromConfigurationDescriptorGroup;

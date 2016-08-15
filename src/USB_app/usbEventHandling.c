@@ -34,7 +34,7 @@
  * Event-handling placeholder functions.
  * All functios are called in interrupt context.
  */
-#include "driverlib.h"
+#include <msp430-driverlib/MSP430F5xx_6xx/driverlib.h>
 
 #include "USB_API/USB_Common/device.h"
 #include "USB_API/USB_Common/defMSP430USB.h"

@@ -56,7 +56,7 @@ uint8_t const abromDeviceDescriptor[SIZEOF_DEVICE_DESCRIPTOR] = {
     0x01,                                   // Device's protocol type code
     EP0_PACKET_SIZE,                        // End point 0's packet size
     USB_VID&0xFF, USB_VID>>8,               // Vendor ID for device, TI=0x0451
-                                            // You can order your own VID at www.usb.org
+                                            // You can order your own VID at www.usb.org"
     USB_PID&0xFF, USB_PID>>8,               // Product ID for device,
                                             // this ID is to only with this example
     VER_FW_L, VER_FW_H,                     // Revision level of device
@@ -210,7 +210,7 @@ const struct abromConfigurationDescriptorGroup abromConfigurationDescriptorGroup
         0x24,                                // bDescriptorType: CS_INTERFACE
         0x01,                                // bDescriptorSubtype: Call Management Func Desc
         0x00,                                // bmCapabilities: D0+D1
-        CDC1_DATA_INTERFACE,                 // bDataInterface: 0
+        CDC1_DATA_INTERFACE,                // bDataInterface: 0
 
         //ACM Functional Descriptor
         0x04,                                // bFunctionLength
@@ -219,46 +219,46 @@ const struct abromConfigurationDescriptorGroup abromConfigurationDescriptorGroup
         0x02,                                // bmCapabilities
 
         // Union Functional Descriptor
-        0x05,                                // Size, in bytes
-        0x24,                                // bDescriptorType: CS_INTERFACE
+        0x05,                               // Size, in bytes
+        0x24,                               // bDescriptorType: CS_INTERFACE
         0x06,                                // bDescriptorSubtype: Union Functional Desc
-        CDC1_COMM_INTERFACE,                 // bMasterInterface -- the controlling intf for the union
-        CDC1_DATA_INTERFACE,                 // bSlaveInterface -- the controlled intf for the union
+        CDC1_COMM_INTERFACE,                // bMasterInterface -- the controlling intf for the union
+        CDC1_DATA_INTERFACE,                // bSlaveInterface -- the controlled intf for the union
 
         //EndPoint Descriptor for Interrupt endpoint
-        SIZEOF_ENDPOINT_DESCRIPTOR,          // bLength: Endpoint Descriptor size
-        DESC_TYPE_ENDPOINT,                  // bDescriptorType: Endpoint
-        CDC1_INTEP_ADDR,                     // bEndpointAddress: (IN2)
-        EP_DESC_ATTR_TYPE_INT,               // bmAttributes: Interrupt
-        0x40, 0x00,                          // wMaxPacketSize, 64 bytes
+        SIZEOF_ENDPOINT_DESCRIPTOR,         // bLength: Endpoint Descriptor size
+        DESC_TYPE_ENDPOINT,                 // bDescriptorType: Endpoint
+        CDC1_INTEP_ADDR,                    // bEndpointAddress: (IN2)
+        EP_DESC_ATTR_TYPE_INT,                // bmAttributes: Interrupt
+        0x40, 0x00,                         // wMaxPacketSize, 64 bytes
         0xFF,                                // bInterval
 
         //DATA INTERFACE DESCRIPTOR (9 bytes)
         0x09,                                // bLength: Interface Descriptor size
-        DESC_TYPE_INTERFACE,                 // bDescriptorType: Interface
-        CDC1_DATA_INTERFACE,                 // bInterfaceNumber
-        0x00,                                // bAlternateSetting: Alternate setting
-        0x02,                                // bNumEndpoints: Three endpoints used
-        0x0A,                                // bInterfaceClass: Data Interface Class
-        0x00,                                // bInterfaceSubClass:
-        0x00,                                // bInterfaceProtocol: No class specific protocol required
+        DESC_TYPE_INTERFACE,                // bDescriptorType: Interface
+        CDC1_DATA_INTERFACE,                // bInterfaceNumber
+        0x00,                               // bAlternateSetting: Alternate setting
+        0x02,                               // bNumEndpoints: Three endpoints used
+        0x0A,                               // bInterfaceClass: Data Interface Class
+        0x00,                               // bInterfaceSubClass:
+        0x00,                               // bInterfaceProtocol: No class specific protocol required
         0x00,                                // iInterface:
 
         //EndPoint Descriptor for Output endpoint
-        SIZEOF_ENDPOINT_DESCRIPTOR,          // bLength: Endpoint Descriptor size
-        DESC_TYPE_ENDPOINT,                  // bDescriptorType: Endpoint
-        CDC1_OUTEP_ADDR,                     // bEndpointAddress: (OUT3)
-        EP_DESC_ATTR_TYPE_BULK,              // bmAttributes: Bulk
-        0x40, 0x00,                          // wMaxPacketSize, 64 bytes
-        0xFF,                                // bInterval: ignored for Bulk transfer
+        SIZEOF_ENDPOINT_DESCRIPTOR,         // bLength: Endpoint Descriptor size
+        DESC_TYPE_ENDPOINT,                    // bDescriptorType: Endpoint
+        CDC1_OUTEP_ADDR,                    // bEndpointAddress: (OUT3)
+        EP_DESC_ATTR_TYPE_BULK,                // bmAttributes: Bulk
+        0x40, 0x00,                         // wMaxPacketSize, 64 bytes
+        0xFF,                                 // bInterval: ignored for Bulk transfer
 
         //EndPoint Descriptor for Input endpoint
-        SIZEOF_ENDPOINT_DESCRIPTOR,          // bLength: Endpoint Descriptor size
-        DESC_TYPE_ENDPOINT,                  // bDescriptorType: Endpoint
-        CDC1_INEP_ADDR,                      // bEndpointAddress: (IN3)
-        EP_DESC_ATTR_TYPE_BULK,              // bmAttributes: Bulk
-        0x40, 0x00,                          // wMaxPacketSize, 64 bytes
-        0xFF                                 // bInterval: ignored for bulk transfer
+        SIZEOF_ENDPOINT_DESCRIPTOR,         // bLength: Endpoint Descriptor size
+        DESC_TYPE_ENDPOINT,                    // bDescriptorType: Endpoint
+        CDC1_INEP_ADDR,                        // bEndpointAddress: (IN3)
+        EP_DESC_ATTR_TYPE_BULK,                // bmAttributes: Bulk
+        0x40, 0x00,                         // wMaxPacketSize, 64 bytes
+        0xFF                                // bInterval: ignored for bulk transfer
         },
 
         /* end CDC[1]*/
@@ -298,7 +298,7 @@ const struct abromConfigurationDescriptorGroup abromConfigurationDescriptorGroup
         0x24,                                // bDescriptorType: CS_INTERFACE
         0x01,                                // bDescriptorSubtype: Call Management Func Desc
         0x00,                                // bmCapabilities: D0+D1
-        CDC2_DATA_INTERFACE,                 // bDataInterface: 0
+        CDC2_DATA_INTERFACE,                // bDataInterface: 0
 
         //ACM Functional Descriptor
         0x04,                                // bFunctionLength
@@ -307,46 +307,46 @@ const struct abromConfigurationDescriptorGroup abromConfigurationDescriptorGroup
         0x02,                                // bmCapabilities
 
         // Union Functional Descriptor
-        0x05,                                // Size, in bytes
-        0x24,                                // bDescriptorType: CS_INTERFACE
+        0x05,                               // Size, in bytes
+        0x24,                               // bDescriptorType: CS_INTERFACE
         0x06,                                // bDescriptorSubtype: Union Functional Desc
-        CDC2_COMM_INTERFACE,                 // bMasterInterface -- the controlling intf for the union
-        CDC2_DATA_INTERFACE,                 // bSlaveInterface -- the controlled intf for the union
+        CDC2_COMM_INTERFACE,                // bMasterInterface -- the controlling intf for the union
+        CDC2_DATA_INTERFACE,                // bSlaveInterface -- the controlled intf for the union
 
         //EndPoint Descriptor for Interrupt endpoint
-        SIZEOF_ENDPOINT_DESCRIPTOR,          // bLength: Endpoint Descriptor size
-        DESC_TYPE_ENDPOINT,                  // bDescriptorType: Endpoint
-        CDC2_INTEP_ADDR,                     // bEndpointAddress: (IN2)
-        EP_DESC_ATTR_TYPE_INT,               // bmAttributes: Interrupt
-        0x40, 0x00,                          // wMaxPacketSize, 64 bytes
+        SIZEOF_ENDPOINT_DESCRIPTOR,         // bLength: Endpoint Descriptor size
+        DESC_TYPE_ENDPOINT,                 // bDescriptorType: Endpoint
+        CDC2_INTEP_ADDR,                    // bEndpointAddress: (IN2)
+        EP_DESC_ATTR_TYPE_INT,                // bmAttributes: Interrupt
+        0x40, 0x00,                         // wMaxPacketSize, 64 bytes
         0xFF,                                // bInterval
 
         //DATA INTERFACE DESCRIPTOR (9 bytes)
         0x09,                                // bLength: Interface Descriptor size
-        DESC_TYPE_INTERFACE,                 // bDescriptorType: Interface
-        CDC2_DATA_INTERFACE,                 // bInterfaceNumber
-        0x00,                                // bAlternateSetting: Alternate setting
-        0x02,                                // bNumEndpoints: Three endpoints used
-        0x0A,                                // bInterfaceClass: Data Interface Class
-        0x00,                                // bInterfaceSubClass:
-        0x00,                                // bInterfaceProtocol: No class specific protocol required
+        DESC_TYPE_INTERFACE,                // bDescriptorType: Interface
+        CDC2_DATA_INTERFACE,                // bInterfaceNumber
+        0x00,                               // bAlternateSetting: Alternate setting
+        0x02,                               // bNumEndpoints: Three endpoints used
+        0x0A,                               // bInterfaceClass: Data Interface Class
+        0x00,                               // bInterfaceSubClass:
+        0x00,                               // bInterfaceProtocol: No class specific protocol required
         0x00,                                // iInterface:
 
         //EndPoint Descriptor for Output endpoint
-        SIZEOF_ENDPOINT_DESCRIPTOR,          // bLength: Endpoint Descriptor size
-        DESC_TYPE_ENDPOINT,                  // bDescriptorType: Endpoint
-        CDC2_OUTEP_ADDR,                     // bEndpointAddress: (OUT3)
-        EP_DESC_ATTR_TYPE_BULK,              // bmAttributes: Bulk
-        0x40, 0x00,                          // wMaxPacketSize, 64 bytes
-        0xFF,                                // bInterval: ignored for Bulk transfer
+        SIZEOF_ENDPOINT_DESCRIPTOR,         // bLength: Endpoint Descriptor size
+        DESC_TYPE_ENDPOINT,                    // bDescriptorType: Endpoint
+        CDC2_OUTEP_ADDR,                    // bEndpointAddress: (OUT3)
+        EP_DESC_ATTR_TYPE_BULK,                // bmAttributes: Bulk
+        0x40, 0x00,                         // wMaxPacketSize, 64 bytes
+        0xFF,                                 // bInterval: ignored for Bulk transfer
 
         //EndPoint Descriptor for Input endpoint
-        SIZEOF_ENDPOINT_DESCRIPTOR,          // bLength: Endpoint Descriptor size
-        DESC_TYPE_ENDPOINT,                  // bDescriptorType: Endpoint
-        CDC2_INEP_ADDR,                      // bEndpointAddress: (IN3)
-        EP_DESC_ATTR_TYPE_BULK,              // bmAttributes: Bulk
-        0x40, 0x00,                          // wMaxPacketSize, 64 bytes
-        0xFF                                 // bInterval: ignored for bulk transfer
+        SIZEOF_ENDPOINT_DESCRIPTOR,         // bLength: Endpoint Descriptor size
+        DESC_TYPE_ENDPOINT,                    // bDescriptorType: Endpoint
+        CDC2_INEP_ADDR,                        // bEndpointAddress: (IN3)
+        EP_DESC_ATTR_TYPE_BULK,                // bmAttributes: Bulk
+        0x40, 0x00,                         // wMaxPacketSize, 64 bytes
+        0xFF                                // bInterval: ignored for bulk transfer
         }
 
         /* end CDC[2]*/
@@ -366,6 +366,7 @@ uint8_t const abromStringDescriptor[] = {
     4,        // Length of language descriptor ID
     3,        // LANGID tag
     0x09, 0x04,    // 0x0409 for English
+
 
     // String index1, Manufacturer
 
@@ -504,7 +505,8 @@ const tDEVICE_REQUEST_COMPARE tUsbRequestList[] =
         CDC0_COMM_INTERFACE,0x00,                 // CDC interface is 0
         0x00,0x00,                                 // No further data
         0xcf,&usbSetControlLineState,
-    },
+        },
+
     {
         //---- CDC1Class Requests -----//
         // GET LINE CODING
@@ -532,7 +534,8 @@ const tDEVICE_REQUEST_COMPARE tUsbRequestList[] =
         CDC1_COMM_INTERFACE,0x00,                 // CDC interface is 1
         0x00,0x00,                                 // No further data
         0xcf,&usbSetControlLineState,
-    },
+        },
+
     {
         //---- CDC2Class Requests -----//
         // GET LINE CODING
@@ -560,7 +563,8 @@ const tDEVICE_REQUEST_COMPARE tUsbRequestList[] =
         CDC2_COMM_INTERFACE,0x00,                 // CDC interface is 2
         0x00,0x00,                                 // No further data
         0xcf,&usbSetControlLineState,
-    },
+        },
+
 
     {
         //---- USB Standard Requests -----//

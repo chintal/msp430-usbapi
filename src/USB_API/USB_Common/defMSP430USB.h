@@ -130,13 +130,13 @@ extern "C"
 #define EP7_OUT_ADDR          0x07      //address for endpoint 7
 
 //Input end points
-#define EP1_IN_ADDR          0x81       //address for endpoint 1
-#define EP2_IN_ADDR          0x82       //address for endpoint 2
-#define EP3_IN_ADDR          0x83       //address for endpoint 3
-#define EP4_IN_ADDR          0x84       //address for endpoint 4
-#define EP5_IN_ADDR          0x85       //address for endpoint 5
-#define EP6_IN_ADDR          0x86       //address for endpoint 6
-#define EP7_IN_ADDR          0x87       //address for endpoint 7
+#define EP1_IN_ADDR           0x81       //address for endpoint 1
+#define EP2_IN_ADDR           0x82       //address for endpoint 2
+#define EP3_IN_ADDR           0x83       //address for endpoint 3
+#define EP4_IN_ADDR           0x84       //address for endpoint 4
+#define EP5_IN_ADDR           0x85       //address for endpoint 5
+#define EP6_IN_ADDR           0x86       //address for endpoint 6
+#define EP7_IN_ADDR           0x87       //address for endpoint 7
 
 
 //EDB Data Structure

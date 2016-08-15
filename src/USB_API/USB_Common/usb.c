@@ -299,80 +299,68 @@ void USB_InitSerialStringDescriptor (void);
 void USB_initMemcpy (void);
 uint16_t USB_determineFreq(void);
 
-char *USB_getVersion(void);
-
-/* Version string to embed in executable. May need to change for ELF compiler */
-const char *VERSION = "USB_DEVELOPERS_PACKAGE_5_10_00_17";
-char *USB_getVersion(void)
-{
-	return ((char *)&VERSION);
-}
-
 
 /**
  * Init the USB HW interface.
  */
 uint8_t USB_init (void)
 {
-    uint16_t bGIE  = __get_SR_register() & GIE;                                 //save interrupt status
+    // TODO Use standard timing functions instead?
+    uint16_t bGIE  = __get_SR_register() & GIE; //save interrupt status
     uint16_t MCLKFreq = USB_determineFreq();
     uint16_t DelayConstant_250us = ((MCLKFreq >> 6) + (MCLKFreq >> 7) + (MCLKFreq >> 9));
     volatile uint16_t i, j;
 
-    char *(*fp)(void);
-
-	/* force version string into executable */
-    fp = &USB_getVersion;
-    fp();
-
     //atomic operation - disable interrupts
-    __disable_interrupt();                                                      //Disable global interrupts
+    __disable_interrupt();                                  
 
     //configuration of USB module
-    USBKEYPID   =     0x9628;                                                   //set KEY and PID to 0x9628 -> access to
-																				//configuration registers enabled
+    //set KEY and PID to 0x9628 -> access to configuration registers enabled
+    USBKEYPID = 0x9628;                
+    
     /* If USB device is self-powered, USB_SUPPORT_SELF_POWERED = 0xc0 */
-#if (USB_SUPPORT_SELF_POWERED == 0xc0)
-/*USB9 issue fixed in hardware for FG6626.  So no need to turn LDO off*/
-#ifndef __MSP430FG6626__
+    #if (USB_SUPPORT_SELF_POWERED == 0xc0)
+    /*USB9 issue fixed in hardware for FG6626.  So no need to turn LDO off*/
+        #ifndef __MSP430FG6626__
         /* To fix USB9 enumeration issue */
         USBPWRCTL = 0;
-#endif
-#endif
-	
-    USBPHYCTL   =     PUSEL;                                                    //use DP and DM as USB terminals (not needed
-                                                                                //because an external PHY is connected to port
-                                                                                //9)
+        #endif
+    #endif
+    
+    USBPHYCTL = PUSEL;  //use DP and DM as USB terminals 
+    // (not needed because an external PHY is connected to port 9) (wut?)
+    
     if(USB_USE_INTERNAL_3V3LDO == TRUE)
-        USBPWRCTL   =     VUSBEN + SLDOAON;                                     //enable 3.3v and 1.8v LDO (3.3 and 1.8V)
+        USBPWRCTL = VUSBEN + SLDOAON;  //enable 3.3v and 1.8v LDO (3.3 and 1.8V)
     else
-        USBPWRCTL   =     SLDOEN + USBDETEN;                                    //enable 1.8v and VBUS voltage detection while internal 3.3v
-                                                                                //LDO is turned off.
+        USBPWRCTL = SLDOEN + USBDETEN; //enable 1.8v and VBUS voltage detection 
+                                       //and internal 3.3v LDO is turned off.
 
     for (j = 0; j < 20; j++) {
-        for (i = 0; i < (DelayConstant_250us); i++) {//wait some time for LDOs (5ms delay)
+        for (i = 0; i < (DelayConstant_250us); i++) {
+            //wait some time for LDOs (5ms delay)
             _NOP();
         }
     }
 
-    USBPWRCTL   |=   VBONIE;                                  					//enable interrupt VBUSon
-    USBKEYPID   =    0x9600;                                                    //access to configuration registers disabled
+    USBPWRCTL |= VBONIE;  //enable interrupt VBUSon
+    USBKEYPID = 0x9600;   //access to configuration registers disabled
 
     //reset events mask
     wUsbEventMask = 0;
 
     //init Serial Number
-#if (USB_STR_INDEX_SERNUM != 0)
+    #if (USB_STR_INDEX_SERNUM != 0)
     USB_InitSerialStringDescriptor();
-#endif
+    #endif
 
     //init memcpy() function: DMA or non-DMA
     USB_initMemcpy();
-#ifdef _MSC_
+    #ifdef _MSC_
     MscResetCtrlLun();
-#endif
+    #endif
 
-    __bis_SR_register(bGIE);                                                    //restore interrupt status
+    __bis_SR_register(bGIE);  //restore interrupt status
     return (USB_SUCCEED);
 }
 
@@ -410,110 +398,112 @@ void USB_InitSerialStringDescriptor (void)
     uint8_t* pbSerNum;
     uint8_t bBytes;
 
-    j = 1;                                                                      //we start with second byte, first byte (lenght)
-                                                                                //will be filled later
+    //we start with second byte, first byte (length) will be filled later 
+    j = 1;  
+                        
     pbSerNum = 0;
     abramSerialStringDescriptor[j++] = DESC_TYPE_STRING;
 
     //TLV access Function Call
     TLV_getInfo(TLV_TAG_DIERECORD, 0,
         (uint8_t *)&bBytes, (uint16_t **)&pbSerNum);
-    if (bBytes == 0){                                                           //no serial number available
-        //use 00 as serial number = no serial number available
-        abramSerialStringDescriptor[0] = 4;                                     //length
-        abramSerialStringDescriptor[j++] = 0;                                   //no serial number available
-        abramSerialStringDescriptor[j++] = 0;                                   //no serial number available
+    if (bBytes == 0){                                                           
+        //no serial number available, use 00
+        abramSerialStringDescriptor[0] = 4;     //length
+        abramSerialStringDescriptor[j++] = 0; 
+        abramSerialStringDescriptor[j++] = 0; 
     } else {
-        for (i = 0; (i < bBytes) && (i < 8); i++,pbSerNum++)
+        for (i = 0; (i < bBytes) && (i < 8); i++, pbSerNum++)
         {
             hexValue = (*pbSerNum & 0xF0) >> 4;
             if (hexValue < 10){
                 abramSerialStringDescriptor[j++] = (hexValue + '0');
-            } else {          abramSerialStringDescriptor[j++] = (hexValue + 55);}
-            abramSerialStringDescriptor[j++] = 0x00;                            //needed for UNI-Code
+            } 
+            else {          
+                abramSerialStringDescriptor[j++] = (hexValue + 55);
+            }
+            abramSerialStringDescriptor[j++] = 0x00;  //needed for unicode
 
             hexValue = (*pbSerNum & 0x0F);
             if (hexValue < 10){
                 abramSerialStringDescriptor[j++] = (hexValue + '0');
-            } else {          abramSerialStringDescriptor[j++] = (hexValue + 55);}
-            abramSerialStringDescriptor[j++] = 0x00;                            //needed for UNI-Code
+            } 
+            else {          
+                abramSerialStringDescriptor[j++] = (hexValue + 55);
+            }
+            abramSerialStringDescriptor[j++] = 0x00;  //needed for unicode
         }
-        abramSerialStringDescriptor[0] = i * 4 + 2;                             //calculate the length
+        abramSerialStringDescriptor[0] = i * 4 + 2;   //calculate the length
     }
 }
-
 #endif
 
 
 /**
  * Init and start the USB PLL.
  */
-uint8_t USB_enable ()
+uint8_t USB_enable (void)
 {
-#ifdef USE_TIMER_FOR_RESUME
+    #ifdef USE_TIMER_FOR_RESUME
 	USB_enable_crystal();
 	return (USB_SUCCEED);
-#else
-
+    #else
+    // TODO Use standard timing functions instead?
     volatile uint16_t i, k;
     volatile uint16_t j = 0;
     uint16_t status;
     uint16_t MCLKFreq = USB_determineFreq();
     uint16_t DelayConstant_250us = ((MCLKFreq >> 6) + (MCLKFreq >> 7) + (MCLKFreq >> 9));
 
-    if (!(USBPWRCTL & USBBGVBV)){                                               //check USB Bandgap and VBUS valid
+    //check USB Bandgap and VBUS valid
+    if (!(USBPWRCTL & USBBGVBV)){  
         return (USB_GENERAL_ERROR);
     }
 
-    if ((USBCNF & USB_EN) &&
-        (USBPLLCTL & UPLLEN)){
-        return (USB_SUCCEED);                                                  //exit if PLL is already enalbed
+    //exit if PLL is already enalbed
+    if ((USBCNF & USB_EN) && (USBPLLCTL & UPLLEN)){
+        return (USB_SUCCEED);
     }
 
-#if defined (__MSP430F552x) || defined (__MSP430F550x)
+    #if defined (__MSP430F552x) || defined (__MSP430F550x)
 	GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P5, GPIO_PIN2);
 	GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P5, GPIO_PIN3);
-#elif defined (__MSP430F563x_F663x) || defined (__MSP430F565x_F665x) || defined (__MSP430FG6x2x)
+    #elif defined (__MSP430F563x_F663x) || defined (__MSP430F565x_F665x) || defined (__MSP430FG6x2x)
 	GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P7, GPIO_PIN2);
 	GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P7, GPIO_PIN3);
-#endif
-    USBKEYPID = 0x9628;                                                         //set KEY and PID to 0x9628 -> access to
-                                                                                //configuration registers enabled
-    if(USB_XT2_BYPASS_MODE == FALSE){					//XT2 not in bypass mode
+    #endif
+    
+    //set KEY and PID to 0x9628 -> access to configuration registers enabled
+    USBKEYPID = 0x9628;
+
+    if(USB_XT2_BYPASS_MODE == FALSE){
+        //XT2 not in bypass mode
     	if (USB_XT_FREQ_VALUE >= 24) {
-    		status = UCS_turnOnXT2WithTimeout(
-    	   			XT2DRIVE_3, 50000);
+    		status = UCS_turnOnXT2WithTimeout(XT2DRIVE_3, 50000);
     	}
     	else if(USB_XT_FREQ_VALUE >= 16) {
-    		status = UCS_turnOnXT2WithTimeout(
-    	  			XT2DRIVE_2, 50000);
+    		status = UCS_turnOnXT2WithTimeout(XT2DRIVE_2, 50000);
     	}
     	else if(USB_XT_FREQ_VALUE >= 8) {
-    		status = UCS_turnOnXT2WithTimeout(
-    	   			XT2DRIVE_1, 50000);
+    		status = UCS_turnOnXT2WithTimeout(XT2DRIVE_1, 50000);
     	}
     	else {
-    		status = UCS_turnOnXT2WithTimeout(
-    	 			XT2DRIVE_0, 50000);
+    		status = UCS_turnOnXT2WithTimeout(XT2DRIVE_0, 50000);
     	}
-
     }
-    else{												//XT2 in bypass mode
+    else{
+        //XT2 in bypass mode
     	if (USB_XT_FREQ_VALUE >= 24) {
-    		status = UCS_bypassXT2WithTimeout(
-    			50000);
+    		status = UCS_bypassXT2WithTimeout(50000);
      	}
     	else if(USB_XT_FREQ_VALUE >= 16) {
-    		status = UCS_bypassXT2WithTimeout(
-    			 50000);
+    		status = UCS_bypassXT2WithTimeout(50000);
     	}
     	else if(USB_XT_FREQ_VALUE >= 8) {
-    		status = UCS_bypassXT2WithTimeout(
-    			50000);
+    		status = UCS_bypassXT2WithTimeout(50000);
     	}
     	else {
-    		status = UCS_bypassXT2WithTimeout(
-    			50000);
+    		status = UCS_bypassXT2WithTimeout(50000);
       	}
     }
 
@@ -521,19 +511,21 @@ uint8_t USB_enable ()
 		return (USB_GENERAL_ERROR);
 	}
 	
-    USBPLLDIVB = USB_XT_FREQ;                                                   //Settings desired frequency
+	//Settings desired frequency
+    USBPLLDIVB = USB_XT_FREQ;
 
-    USBPLLCTL = UPFDEN + UPLLEN;                                    		    //Select XT2 as Ref / Select PLL for USB / Discrim.
-                                                                                //on, enable PLL
+    //Select XT2 as Ref / Select PLL for USB / Discrim. on, enable PLL
+    USBPLLCTL = UPFDEN + UPLLEN;
 
     //Wait some time till PLL is settled
     do
     {
-        USBPLLIR    =     0x0000;                                               //make sure no interrupts can occur on
-                                                                                //PLL-module
+        //make sure no interrupts can occur on PLL-module
+        USBPLLIR = 0x0000;                                               
         if ((((bFunctionSuspended == TRUE) || (bFunctionSuspended == FALSE)) && (USB_DISABLE_XT_SUSPEND == 1)) ||
         		((USB_DISABLE_XT_SUSPEND == 0) && (bFunctionSuspended == FALSE))){  //BUG NUMBER 4879
-#ifdef __MSP430F6638
+            // TODO Use standard timing functions instead?
+            #ifdef __MSP430F6638
             //wait 1 ms till enable USB
             for(k = 0; k < 4; k++)
             {
@@ -541,7 +533,7 @@ uint8_t USB_enable ()
                     _NOP();
                 }
             }
-#else
+            #else
             //wait 1/2 ms till enable USB
             for(k = 0; k < 2; k++)
             {
@@ -549,19 +541,22 @@ uint8_t USB_enable ()
                    _NOP();
                 }
             }        
-#endif
+            #endif
         }
 
         if (j++ > 10){
-            USBKEYPID   =    0x9600;                                            //access to configuration registers disabled
+            //access to configuration registers disabled
+            USBKEYPID = 0x9600;
             return (USB_GENERAL_ERROR);
         }
     } while (USBPLLIR != 0);
 
-    USBCNF     |=    USB_EN;                                                    //enable USB module
-    USBKEYPID   =    0x9600;                                                    //access to configuration registers disabled
+    //enable USB module
+    USBCNF |= USB_EN;
+    //access to configuration registers disabled
+    USBKEYPID = 0x9600;
     return (USB_SUCCEED);
-#endif
+    #endif
 }
 
 #ifdef USE_TIMER_FOR_RESUME
@@ -574,58 +569,52 @@ uint8_t USB_enable_crystal (void)
     volatile uint16_t i, k;
     volatile uint16_t j = 0;
 
-    if (!(USBPWRCTL & USBBGVBV)){                                               //check USB Bandgap and VBUS valid
+    //check USB Bandgap and VBUS valid
+    if (!(USBPWRCTL & USBBGVBV)){                                               
         return (USB_GENERAL_ERROR);
     }
 
-    if ((USBCNF & USB_EN) &&
-        (USBPLLCTL & UPLLEN)){
-        return (USB_SUCCEED);                                                  //exit if PLL is already enalbed
+    //exit if PLL is already enalbed
+    if ((USBCNF & USB_EN) && (USBPLLCTL & UPLLEN)){
+        return (USB_SUCCEED);
     }
 
-#if defined (__MSP430F552x) || defined (__MSP430F550x)
+    #if defined (__MSP430F552x) || defined (__MSP430F550x)
 	GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P5, GPIO_PIN2);
 	GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P5, GPIO_PIN3);
-#elif defined (__MSP430F563x_F663x) || defined (__MSP430F565x_F665x) || defined (__MSP430FG6x2x)
+    #elif defined (__MSP430F563x_F663x) || defined (__MSP430F565x_F665x) || defined (__MSP430FG6x2x)
 	GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P7, GPIO_PIN2);
 	GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P7, GPIO_PIN3);
-#endif
+    #endif
  
-    if(USB_XT2_BYPASS_MODE == FALSE){					//XT2 not in bypass mode
+    if(USB_XT2_BYPASS_MODE == FALSE){
+        //XT2 not in bypass mode
     	if (USB_XT_FREQ_VALUE >= 24) {
-    		UCS_turnOnXT2WithTimeout(
-    	   			XT2DRIVE_3, 50000);
+    		UCS_turnOnXT2WithTimeout(XT2DRIVE_3, 50000);
     	}
     	else if(USB_XT_FREQ_VALUE >= 16) {
-    		UCS_turnOnXT2WithTimeout(
-    	  			XT2DRIVE_2, 50000);
+    		UCS_turnOnXT2WithTimeout(XT2DRIVE_2, 50000);
     	}
     	else if(USB_XT_FREQ_VALUE >= 8) {
-    		UCS_turnOnXT2WithTimeout(
-    	   			XT2DRIVE_1, 50000);
+    		UCS_turnOnXT2WithTimeout(XT2DRIVE_1, 50000);
     	}
     	else {
-    		UCS_turnOnXT2WithTimeout(
-    	 			XT2DRIVE_0, 50000);
+    		UCS_turnOnXT2WithTimeout(XT2DRIVE_0, 50000);
     	}
-
     }
-    else{												//XT2 in bypass mode
+    else{
+        //XT2 in bypass mode
     	if (USB_XT_FREQ_VALUE >= 24) {
-    		 UCS_bypassXT2WithTimeout(
-    			50000);
+    		 UCS_bypassXT2WithTimeout(50000);
      	}
     	else if(USB_XT_FREQ_VALUE >= 16) {
-    		 UCS_bypassXT2WithTimeout(
-    			 50000);
+    		 UCS_bypassXT2WithTimeout(50000);
     	}
     	else if(USB_XT_FREQ_VALUE >= 8) {
-    		 UCS_bypassXT2WithTimeout(
-    			50000);
+    		 UCS_bypassXT2WithTimeout(50000);
     	}
     	else {
-    		 UCS_bypassXT2WithTimeout(
-    			50000);
+    		 UCS_bypassXT2WithTimeout(50000);
       	}
     }
 
@@ -639,12 +628,12 @@ uint8_t USB_enable_crystal (void)
  */
 void USB_enable_PLL(void)
 {
-    USBKEYPID = 0x9628;                                                         //set KEY and PID to 0x9628 -> access to
-                                                                                //configuration registers enabled
-    USBPLLDIVB = USB_XT_FREQ;                                                   //Settings desired frequency
-
-    USBPLLCTL = UPFDEN + UPLLEN;                                               //Select XT2 as Ref / Select PLL for USB / Discrim.
-                                                                                //on, enable PLL
+    //set KEY and PID to 0x9628 -> access to configuration registers enabled
+    USBKEYPID = 0x9628;                                                         
+    //Settings desired frequency
+    USBPLLDIVB = USB_XT_FREQ; 
+    //Select XT2 as Ref / Select PLL for USB / Discrim. on, enable PLL
+    USBPLLCTL = UPFDEN + UPLLEN;                                               
 
     USB_handlePLLStartedEvent();
 }
@@ -654,10 +643,14 @@ void USB_enable_PLL(void)
  */
 void USB_enable_final(void)
 {
-    USBCNF     |=    USB_EN;                                                    //enable USB module
-    USBKEYPID   =    0x9600;                                                    //access to configuration registers disabled
-    USBIFG &= ~(RESRIFG | SUSRIFG);     //clear interrupt flags
-    USBIE = SETUPIE | RSTRIE | SUSRIE;  //enable USB specific interrupts (setup, reset, suspend)
+    //enable USB module
+    USBCNF |= USB_EN;
+    //access to configuration registers disabled
+    USBKEYPID = 0x9600;
+    //clear interrupt flags
+    USBIFG &= ~(RESRIFG | SUSRIFG);
+    //enable USB specific interrupts (setup, reset, suspend)
+    USBIE = SETUPIE | RSTRIE | SUSRIE;
 
     bFunctionSuspended  = FALSE;
 }
@@ -670,13 +663,12 @@ void USB_enable_final(void)
 
 uint8_t USB_disable (void)
 {
-    USBKEYPID = 0x9628;                                                         //set KEY and PID to 0x9628 -> access to
-                                                                                //configuration registers enabled
-    USBCNF    = 0;                                                              //disable USB module
-    USBPLLCTL &= ~UPLLEN;                                                       //disable PLL
-    USBKEYPID = 0x9600;                                                         //access to configuration registers disabled
-    bEnumerationStatus = 0x00;                                                  //device is not enumerated
-    bFunctionSuspended = FALSE;                                                 //device is not suspended
+    USBKEYPID = 0x9628;         //set KEY and PID to 0x9628 -> access to configuration registers enabled
+    USBCNF = 0;                 //disable USB module
+    USBPLLCTL &= ~UPLLEN;       //disable PLL
+    USBKEYPID = 0x9600;         //access to configuration registers disabled
+    bEnumerationStatus = 0x00;  //device is not enumerated
+    bFunctionSuspended = FALSE; //device is not suspended
     return (USB_SUCCEED);
 }
 
@@ -692,7 +684,7 @@ uint8_t USB_setEnabledEvents (uint16_t events)
 /*
  * Returns which events are enabled and which are disabled.
  */
-uint16_t USB_getEnabledEvents ()
+uint16_t USB_getEnabledEvents (void)
 {
     return (wUsbEventMask);
 }
@@ -700,128 +692,121 @@ uint16_t USB_getEnabledEvents ()
 /**
  * Reset USB-SIE and global variables.
  */
-uint8_t USB_reset ()
+uint8_t USB_reset (void)
 {
     int16_t i;
 
-    USBKEYPID = 0x9628;                                                             //set KEY and PID to 0x9628 -> access to
-                                                                                    //configuration registers enabled
+    USBKEYPID = 0x9628; //set KEY and PID to 0x9628 -> access to configuration registers enabled
 
     //reset should be on the bus after this!
-    bEnumerationStatus = 0x00;                                                      //Device not enumerated yet
-    bFunctionSuspended = FALSE;                                                     //Device is not in suspend mode
+    bEnumerationStatus = 0x00;         //Device not enumerated yet
+    bFunctionSuspended = FALSE;        //Device is not in suspend mode
 
     bRemoteWakeup = DISABLE;
 
-    bConfigurationNumber    = 0x00;                                                 //device unconfigured
-    bInterfaceNumber        = 0x00;
+    bConfigurationNumber = 0x00;       //device unconfigured
+    bInterfaceNumber = 0x00;
 
-    //FRSTE handling:
-    //Clear FRSTE in the RESRIFG interrupt service routine before re-configuring USB control registers.
-    //Set FRSTE at the beginning of SUSRIFG, SETUP, IEPIFG.EP0 and OEPIFG.EP0 interrupt service routines.
-    USBCTL = 0;                                                                     //Function Reset Connection disable (FRSTE)
+    // FRSTE handling:
+    // Clear FRSTE in the RESRIFG interrupt service routine before 
+    // re-configuring USB control registers.
+    // Set FRSTE at the beginning of SUSRIFG, SETUP, IEPIFG.EP0 and 
+    // OEPIFG.EP0 interrupt service routines.
+    USBCTL = 0;                        //Function Reset Connection disable (FRSTE)                                       
 
-    wBytesRemainingOnIEP0   = NO_MORE_DATA;
-    wBytesRemainingOnOEP0   = NO_MORE_DATA;
-    bStatusAction           = STATUS_ACTION_NOTHING;
+    wBytesRemainingOnIEP0 = NO_MORE_DATA;
+    wBytesRemainingOnOEP0 = NO_MORE_DATA;
+    bStatusAction         = STATUS_ACTION_NOTHING;
 
     //The address reset normally will be done automatically during bus function reset
-    USBFUNADR   =     0x00;                                                         //reset address of USB device (unconfigured)
+    USBFUNADR = 0x00;                  //reset address of USB device (unconfigured)
 
     /* Set settings for EP0 */
     //NAK both 0 endpoints and enable endpoint 0 interrupt
     tEndPoint0DescriptorBlock.bIEPBCNT = EPBCNT_NAK;
     tEndPoint0DescriptorBlock.bOEPBCNT = EPBCNT_NAK;
-    tEndPoint0DescriptorBlock.bIEPCNFG = EPCNF_USBIE | EPCNF_UBME | EPCNF_STALL;    //8 byte data packet
-    tEndPoint0DescriptorBlock.bOEPCNFG = EPCNF_USBIE | EPCNF_UBME | EPCNF_STALL;    //8 byte data packet
+    tEndPoint0DescriptorBlock.bIEPCNFG = EPCNF_USBIE | EPCNF_UBME | EPCNF_STALL;  //8 byte data packet
+    tEndPoint0DescriptorBlock.bOEPCNFG = EPCNF_USBIE | EPCNF_UBME | EPCNF_STALL;  //8 byte data packet
 
     USBOEPIE = USB_OUTEP_INT_EN;
     USBIEPIE = USB_INEP_INT_EN;
 
     //loop for initialization all of used enpoints
-    for (i = 0;
-         i < (CDC_NUM_INTERFACES + HID_NUM_INTERFACES + MSC_NUM_INTERFACES + PHDC_NUM_INTERFACES);
-         i++)
-    {
+    #define TOTAL_NUM_INTERFACES   (CDC_NUM_INTERFACES + \
+                                    HID_NUM_INTERFACES + \
+                                    MSC_NUM_INTERFACES + \
+                                    PHDC_NUM_INTERFACES)
+    for (i = 0; i < TOTAL_NUM_INTERFACES; i++){
         uint8_t edbIndex = stUsbHandle[i].edb_Index;
 
         /* Set settings for IEPx */
-        tInputEndPointDescriptorBlock[edbIndex].bEPCNF   = EPCNF_USBIE |
-                                                           EPCNF_UBME |
-                                                           EPCNF_DBUF;              //double buffering
-        tInputEndPointDescriptorBlock[edbIndex].bEPBBAX  =
-            (uint8_t)(((stUsbHandle[i].iep_X_Buffer -
-                     START_OF_USB_BUFFER) >> 3) & 0x00ff);
-        tInputEndPointDescriptorBlock[edbIndex].bEPBBAY  =
-            (uint8_t)(((stUsbHandle[i].iep_Y_Buffer -
-                     START_OF_USB_BUFFER) >> 3) & 0x00ff);
-        tInputEndPointDescriptorBlock[edbIndex].bEPBCTX  = EPBCNT_NAK;
-        tInputEndPointDescriptorBlock[edbIndex].bEPBCTY  = EPBCNT_NAK;
-        tInputEndPointDescriptorBlock[edbIndex].bEPSIZXY = MAX_PACKET_SIZE;
+        tInputEndPointDescriptorBlock[edbIndex].bEPCNF    = EPCNF_USBIE | EPCNF_UBME |
+                                                           EPCNF_DBUF;  //double buffering
+        tInputEndPointDescriptorBlock[edbIndex].bEPBBAX   =
+            (uint8_t)(((stUsbHandle[i].iep_X_Buffer - START_OF_USB_BUFFER) >> 3) & 0x00ff);
+        tInputEndPointDescriptorBlock[edbIndex].bEPBBAY   =
+            (uint8_t)(((stUsbHandle[i].iep_Y_Buffer - START_OF_USB_BUFFER) >> 3) & 0x00ff);
+        tInputEndPointDescriptorBlock[edbIndex].bEPBCTX   = EPBCNT_NAK;
+        tInputEndPointDescriptorBlock[edbIndex].bEPBCTY   = EPBCNT_NAK;
+        tInputEndPointDescriptorBlock[edbIndex].bEPSIZXY  = MAX_PACKET_SIZE;
 
         /* Set settings for OEPx */
-
-        tOutputEndPointDescriptorBlock[edbIndex].bEPCNF   = EPCNF_USBIE |
-                                                            EPCNF_UBME |
-                                                            EPCNF_DBUF ;            //double buffering
+        tOutputEndPointDescriptorBlock[edbIndex].bEPCNF   = EPCNF_USBIE | EPCNF_UBME |
+                                                            EPCNF_DBUF;  //double buffering
         
         tOutputEndPointDescriptorBlock[edbIndex].bEPBBAX  =
-            (uint8_t)(((stUsbHandle[i].oep_X_Buffer -
-                     START_OF_USB_BUFFER) >> 3) & 0x00ff);
+            (uint8_t)(((stUsbHandle[i].oep_X_Buffer - START_OF_USB_BUFFER) >> 3) & 0x00ff);
         tOutputEndPointDescriptorBlock[edbIndex].bEPBBAY  =
-            (uint8_t)(((stUsbHandle[i].oep_Y_Buffer -
-                     START_OF_USB_BUFFER) >> 3) & 0x00ff);
+            (uint8_t)(((stUsbHandle[i].oep_Y_Buffer - START_OF_USB_BUFFER) >> 3) & 0x00ff);
         tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX  = 0x00;
         tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY  = 0x00;
         tOutputEndPointDescriptorBlock[edbIndex].bEPSIZXY = MAX_PACKET_SIZE;
 
-#       ifdef _CDC_
+        #ifdef _CDC_
         /* Additional interrupt end point for CDC */
         if (stUsbHandle[i].dev_Class == CDC_CLASS){
             //The decriptor tool always generates the managemnet endpoint before the data endpoint
-            tInputEndPointDescriptorBlock[edbIndex -
-                                          1].bEPCNF   = EPCNF_USBIE |
-                                                        EPCNF_UBME | EPCNF_DBUF;    //double buffering
-            tInputEndPointDescriptorBlock[edbIndex -
-                                          1].bEPBBAX  =
-                (uint8_t)(((stUsbHandle[i].intepEP_X_Buffer -
-                         START_OF_USB_BUFFER) >> 3) & 0x00ff);
-            tInputEndPointDescriptorBlock[edbIndex -
-                                          1].bEPBBAY  =
-                (uint8_t)(((stUsbHandle[i].intepEP_Y_Buffer -
-                         START_OF_USB_BUFFER) >> 3) & 0x00ff);
+            tInputEndPointDescriptorBlock[edbIndex - 1].bEPCNF = EPCNF_USBIE | EPCNF_UBME | 
+                                                                 EPCNF_DBUF; //double buffering
+            tInputEndPointDescriptorBlock[edbIndex - 1].bEPBBAX =
+                (uint8_t)(((stUsbHandle[i].intepEP_X_Buffer - START_OF_USB_BUFFER) >> 3) & 0x00ff);
+            tInputEndPointDescriptorBlock[edbIndex - 1].bEPBBAY =
+                (uint8_t)(((stUsbHandle[i].intepEP_Y_Buffer - START_OF_USB_BUFFER) >> 3) & 0x00ff);
             tInputEndPointDescriptorBlock[edbIndex - 1].bEPBCTX  = EPBCNT_NAK;
             tInputEndPointDescriptorBlock[edbIndex - 1].bEPBCTY  = EPBCNT_NAK;
-            tInputEndPointDescriptorBlock[edbIndex -
-                                          1].bEPSIZXY = MAX_PACKET_SIZE;
+            tInputEndPointDescriptorBlock[edbIndex - 1].bEPSIZXY = MAX_PACKET_SIZE;
         }
-#       endif
+        #endif
     }
 
-#   ifdef _HID_
-    HidResetData();                                                                 //reset HID specific data structures
-#   endif //_HID_
+    #ifdef _HID_
+    //reset HID specific data structures
+    HidResetData(); 
+    #endif 
 
-#   ifdef _MSC_
+    #ifdef _MSC_
     MscState.isMSCConfigured = FALSE;
     USBMSC_reset();
     MscResetData();
-#   endif
+    #endif
 
-#   ifdef _CDC_
-    CdcResetData();                                                                 //reset CDC specific data structures
-#   endif //_CDC_
+    #ifdef _CDC_
+    //reset CDC specific data structures
+    CdcResetData(); 
+    #endif 
 
-#   ifdef _PHDC_
-        PHDCResetData();                     // reset CDC specific data structures
-#   endif // _PHDC_
+    #ifdef _PHDC_
+    //reset PHDC specific data structures
+    PHDCResetData();
+    #endif
 
-    USBCTL = FEN;                                                                   //enable function
-    USBIFG = 0;                                                                     //make sure no interrupts are pending
+    USBCTL = FEN; //enable function
+    USBIFG = 0;   //make sure no interrupts are pending
 
-    USBIE = SETUPIE | RSTRIE | SUSRIE;                                              //enable USB specific interrupts (setup, reset,
-                                                                                    //suspend)
-    USBKEYPID = 0x9600;                                                             //access to configuration registers disabled
+    //enable USB specific interrupts (setup, reset, suspend)
+    USBIE = SETUPIE | RSTRIE | SUSRIE;
+    //access to configuration registers disabled
+    USBKEYPID = 0x9600;
     return (USB_SUCCEED);
 }
 
@@ -829,50 +814,52 @@ uint8_t USB_reset ()
 /*
  * Instruct USB module to make itself available to the PC for connection, by pulling PUR high.
  */
-
-uint8_t USB_connect ()
+uint8_t USB_connect (void)
 {
-    USBKEYPID = 0x9628;                                                             //set KEY and PID to 0x9628 -> access to
-                                                                                    //configuration registers enabled
-    USBCNF |= PUR_EN;                                                               //generate rising edge on DP -> the host
-                                                                                    //enumerates our device as full speed device
-    USBPWRCTL |= VBOFFIE;                                                           //enable interrupt VUSBoff
-    USBKEYPID = 0x9600;                                                             //access to configuration registers disabled
-
+    //set KEY and PID to 0x9628 -> access to configuration registers enabled
+    USBKEYPID = 0x9628;                                                             
+    //generate rising edge on DP -> the host enumerates our device as full speed device
+    USBCNF |= PUR_EN;                                                               
+    //enable interrupt VUSBoff
+    USBPWRCTL |= VBOFFIE;                                                           
+    //access to configuration registers disabled
+    USBKEYPID = 0x9600;
     return (USB_SUCCEED);
 }
 
 /*
  * Force a disconnect from the PC by pulling PUR low.
  */
-uint8_t USB_disconnect ()
+uint8_t USB_disconnect (void)
 {
-    USBKEYPID = 0x9628;                                                             //set KEY and PID to 0x9628 -> access to
-                                                                                    //configuration registers enabled
-    USBCNF &= ~PUR_EN;                                                              //disconnect pull up resistor - logical
-                                                                                    //disconnect from HOST
-    USBPWRCTL &= ~VBOFFIE;                                                          //disable interrupt VUSBoff
-    USBKEYPID = 0x9600;                                                             //access to configuration registers disabled
-    bEnumerationStatus = 0;                                                         //not enumerated
-    bFunctionSuspended = FALSE;                                                     //device is not suspended
+    //set KEY and PID to 0x9628 -> access to configuration registers enabled
+    USBKEYPID = 0x9628;
+    //disconnect pull up resistor - logical disconnect from HOST
+    USBCNF &= ~PUR_EN;
+    //disable interrupt VUSBoff
+    USBPWRCTL &= ~VBOFFIE;
+    //access to configuration registers disabled
+    USBKEYPID = 0x9600;                                                             
+    bEnumerationStatus = 0;          //not enumerated
+    bFunctionSuspended = FALSE;      //device is not suspended
     return (USB_SUCCEED);
 }
+
 /*
  * Force a remote wakeup of the USB host.
  *     This method can be generated only if device supports
  *     remote wake-up feature in some of its configurations.
  *     The method wakes-up the USB bus only if wake-up feature is enabled by the host.
  */
-
-uint8_t USB_forceRemoteWakeup ()
+uint8_t USB_forceRemoteWakeup (void)
 {
-    if (bFunctionSuspended == FALSE){                                               //device is not suspended
+    if (bFunctionSuspended == FALSE){
+        //device is not suspended
         return (USB_NOT_SUSPENDED);
     }
     if (bRemoteWakeup == ENABLE){
-        
-        USBCTL |= RWUP;                                                             //USB - Device Remote Wakeup Request - this bit
-                                                                                    //is self-cleaned
+        //USB - Device Remote Wakeup Request - this bit is self-cleaned
+        USBCTL |= RWUP;                                                             
         return (USB_SUCCEED);
     }
     return (USB_GENERAL_ERROR);
@@ -881,7 +868,7 @@ uint8_t USB_forceRemoteWakeup ()
 /*
  * Returns the status of the USB connection.
  */
-uint8_t USB_getConnectionInformation ()
+uint8_t USB_getConnectionInformation (void)
 {
     uint8_t retVal = 0;
 
@@ -908,10 +895,7 @@ uint8_t USB_getConnectionInformation ()
 /*
  * Returns the state of the USB connection.
  */
-/*
- * Returns the state of the USB connection.
- */
-uint8_t USB_getConnectionState ()
+uint8_t USB_getConnectionState (void)
 {
     //If no VBUS present
     if (!(USBPWRCTL & USBBGVBV)){
@@ -924,30 +908,34 @@ uint8_t USB_getConnectionState ()
     }
 
     //If VBUS present, PUR is high, and enumeration is complete, and not suspended
-    if ((USBPWRCTL & USBBGVBV) && (USBCNF & PUR_EN)
-        && (bEnumerationStatus == ENUMERATION_COMPLETE)
-        && (!(bFunctionSuspended == TRUE))){
-        return (ST_ENUM_ACTIVE);
+    if ((USBPWRCTL & USBBGVBV) && 
+        (USBCNF & PUR_EN) && 
+        (bEnumerationStatus == ENUMERATION_COMPLETE) && 
+        (!(bFunctionSuspended == TRUE))){
+            return (ST_ENUM_ACTIVE);
     }
 
     //If VBUS present, PUR is high, and enumeration is NOT complete, and  suspended
-    if ((USBPWRCTL & USBBGVBV) && (USBCNF & PUR_EN)
-        && (!(bEnumerationStatus == ENUMERATION_COMPLETE))
-        && (bFunctionSuspended == TRUE)){
-        return (ST_NOENUM_SUSPENDED);
+    if ((USBPWRCTL & USBBGVBV) && 
+        (USBCNF & PUR_EN) && 
+        (!(bEnumerationStatus == ENUMERATION_COMPLETE)) && 
+        (bFunctionSuspended == TRUE)){
+            return (ST_NOENUM_SUSPENDED);
     }
 
     //If VBUS present, PUR is high, and enumeration is complete, and  suspended
-    if ((USBPWRCTL & USBBGVBV) && (USBCNF & PUR_EN)
-        && (bEnumerationStatus == ENUMERATION_COMPLETE)
-        && (bFunctionSuspended == TRUE)){
-        return (ST_ENUM_SUSPENDED);
+    if ((USBPWRCTL & USBBGVBV) && 
+        (USBCNF & PUR_EN) && 
+        (bEnumerationStatus == ENUMERATION_COMPLETE) && 
+        (bFunctionSuspended == TRUE)){
+            return (ST_ENUM_SUSPENDED);
     }
 
     //If VBUS present, PUR is high, but no enumeration yet
-    if ((USBPWRCTL & USBBGVBV) && (USBCNF & PUR_EN)
-        && (!(bEnumerationStatus == ENUMERATION_COMPLETE))){
-        return (ST_ENUM_IN_PROGRESS);
+    if ((USBPWRCTL & USBBGVBV) && 
+        (USBCNF & PUR_EN) && 
+        (!(bEnumerationStatus == ENUMERATION_COMPLETE))){
+            return (ST_ENUM_IN_PROGRESS);
     }
 
     return (ST_ERROR);
@@ -957,20 +945,23 @@ uint8_t USB_getConnectionState ()
 uint8_t USB_suspend (void)
 {
     bFunctionSuspended  = TRUE;
-    USBKEYPID = 0x9628;                 //set KEY and PID to 0x9628 -> access to configuration registers enabled
-    USBCTL |= FRSTE;                    //Function Reset Connection Enable
-    USBIFG &= ~SUSRIFG;                 //clear interrupt flag
+    //set KEY and PID to 0x9628 -> access to configuration registers enabled
+    USBKEYPID = 0x9628;                 
+    USBCTL |= FRSTE;         //Function Reset Connection Enable
+    USBIFG &= ~SUSRIFG;      //clear interrupt flag
 
     USBPLLCTL &= ~UPLLEN;
 
     if (USB_DISABLE_XT_SUSPEND){
-        UCS_turnOffXT2();         //disable XT2
+        UCS_turnOffXT2();     //disable XT2
     }
 
-    USBIE = RESRIE;                     //disable USB specific interrupts (setup, suspend, reset), enable resume.
-                                        //If the reset occured during device in suspend, the resume-interrupt will come, after -
-                                        //reset interrupt
-    USBKEYPID = 0x9600;                 //access to configuration registers disabled
+    //disable USB specific interrupts (setup, suspend, reset), enable resume.
+    //If the reset occured during device in suspend, the resume-interrupt will 
+    //come, after reset interrupt
+    USBIE = RESRIE;           
+    //access to configuration registers disabled
+    USBKEYPID = 0x9600;
 
     return (USB_SUCCEED);
 }
@@ -1018,7 +1009,7 @@ void usbStallOEP0 (void)
 void usbSendNextPacketOnIEP0 (void)
 {
     uint8_t bPacketSize,bIndex;
-
+    
     //First check if there are bytes remaining to be transferred
     if (wBytesRemainingOnIEP0 != NO_MORE_DATA){
         if (wBytesRemainingOnIEP0 > EP0_PACKET_SIZE){
@@ -1027,18 +1018,21 @@ void usbSendNextPacketOnIEP0 (void)
             bPacketSize = EP0_PACKET_SIZE;
             wBytesRemainingOnIEP0 -= EP0_PACKET_SIZE;
             bStatusAction = STATUS_ACTION_DATA_IN;
-        } else if (wBytesRemainingOnIEP0 < EP0_PACKET_SIZE){
+        } 
+        else if (wBytesRemainingOnIEP0 < EP0_PACKET_SIZE){
             //The remaining data will fit in one packet.
             //This case will properly handle wBytesRemainingOnIEP0 == 0
             bPacketSize = (uint8_t)wBytesRemainingOnIEP0;
             wBytesRemainingOnIEP0 = NO_MORE_DATA;   //No more data need to be Txed
             bStatusAction = STATUS_ACTION_NOTHING;
-        } else {
+        } 
+        else {
             bPacketSize = EP0_PACKET_SIZE;
             if (bHostAskMoreDataThanAvailable == TRUE){
                 wBytesRemainingOnIEP0 = 0;
                 bStatusAction = STATUS_ACTION_DATA_IN;
-            } else {
+            } 
+            else {
                 wBytesRemainingOnIEP0 = NO_MORE_DATA;
                 bStatusAction = STATUS_ACTION_NOTHING;
             }
@@ -1050,7 +1044,8 @@ void usbSendNextPacketOnIEP0 (void)
             pbIEP0Buffer++;
         }
         tEndPoint0DescriptorBlock.bIEPBCNT = bPacketSize;
-    } else {
+    } 
+    else {
         bStatusAction = STATUS_ACTION_NOTHING;
     }
 }
@@ -1069,7 +1064,8 @@ void usbSendDataPacketOnEP0 (const uint8_t* pbBuffer)
     if (wBytesRemainingOnIEP0 >= wTemp){
         wBytesRemainingOnIEP0 = wTemp;
         bHostAskMoreDataThanAvailable = FALSE;
-    } else {
+    } 
+    else {
         bHostAskMoreDataThanAvailable = TRUE;
     }
     usbSendNextPacketOnIEP0();
@@ -1094,11 +1090,13 @@ void usbReceiveNextPacketOnOEP0 (void)
         if (wBytesRemainingOnOEP0 > 0){
             usbClearOEP0ByteCount();
             bStatusAction = STATUS_ACTION_DATA_OUT;
-        } else {
+        } 
+        else {
             usbStallOEP0();
             bStatusAction = STATUS_ACTION_NOTHING;
         }
-    } else {
+    } 
+    else {
         usbStallOEP0();
         bStatusAction = STATUS_ACTION_NOTHING;
     }
@@ -1130,88 +1128,80 @@ void usbSendZeroLengthPacketOnIEP0 (void)
 uint8_t usbClearEndpointFeature (void)
 {
     uint8_t bEndpointNumber;
-#ifdef _CDC_
-	int8_t i;
-#endif
 
     //EP is from EP1 to EP7 while C language start from 0
     bEndpointNumber = (tSetupPacket.wIndex & EP_DESC_ADDR_EP_NUM);
     if (bEndpointNumber == 0x00){
         usbSendZeroLengthPacketOnIEP0();
-    } else {
+    } 
+    else {
         bEndpointNumber--;
         if (bEndpointNumber < MAX_ENDPOINT_NUMBER){
-            if ((tSetupPacket.wIndex & EP_DESC_ADDR_DIR_IN) ==
-                EP_DESC_ADDR_DIR_IN){
-#ifdef _MSC_
+            if ((tSetupPacket.wIndex & EP_DESC_ADDR_DIR_IN) == EP_DESC_ADDR_DIR_IN){
+                #ifdef _MSC_
                 if (!MscState.bMscResetRequired){
-#endif
-                tInputEndPointDescriptorBlock[bEndpointNumber].bEPCNF &=
-                    ~(EPCNF_STALL | EPCNF_TOGGLE );
-#ifdef _MSC_
-            }
-#endif
+                #endif
+                    tInputEndPointDescriptorBlock[bEndpointNumber].bEPCNF &=
+                        ~(EPCNF_STALL | EPCNF_TOGGLE );
+                #ifdef _MSC_
+                }
+                #endif
 
-#ifdef _MSC_
+                #ifdef _MSC_
                 if (stUsbHandle[MSC0_INTFNUM].edb_Index == bEndpointNumber){
                     MscReadControl.bCurrentBufferXY = 0;    //Set current buffer to X
                     MscState.bMcsCommandSupported = TRUE;
                 }
-#endif
+                #endif
 
-#ifdef _CDC_
+                #ifdef _CDC_
                 /* search to EP correspdonding IF */  //bug 16626
-                for(i = 0; i < CDC_NUM_INTERFACES; ++i)
+                for(uint8_t i = 0; i < CDC_NUM_INTERFACES; ++i)
                 {
-                  if(stUsbHandle[i].edb_Index == bEndpointNumber)
-                  {
-                    CdcReadCtrl[i].bCurrentBufferXY = X_BUFFER; //resets the buffer to X
-                    break;
-                  }
-                    
+                    if(stUsbHandle[i].edb_Index == bEndpointNumber)
+                    {
+                        //resets the buffer to X
+                        CdcReadCtrl[i].bCurrentBufferXY = X_BUFFER; 
+                        break;
+                    }
                 }
-#endif
+                #endif
 
-            } else {
-#ifdef _MSC_
+            } 
+            else {
+                #ifdef _MSC_
                 if (!MscState.bMscResetRequired){
-#endif
-					tOutputEndPointDescriptorBlock[bEndpointNumber].bEPCNF &=
-						~(EPCNF_STALL | EPCNF_TOGGLE );
-#ifdef _MSC_						
-					tOutputEndPointDescriptorBlock[bEndpointNumber].bEPBCTX = 0;
+                #endif
+                    tOutputEndPointDescriptorBlock[bEndpointNumber].bEPCNF &=
+                        ~(EPCNF_STALL | EPCNF_TOGGLE );
+                #ifdef _MSC_
+                    tOutputEndPointDescriptorBlock[bEndpointNumber].bEPBCTX = 0;
                     tOutputEndPointDescriptorBlock[bEndpointNumber].bEPBCTY = 0;
                     MscState.stallEndpoint = FALSE;
-#endif					
-#ifdef _MSC_
-            }
-#endif
+                }
+                #endif
 
-#ifdef _MSC_
+                #ifdef _MSC_
                 if (stUsbHandle[MSC0_INTFNUM].edb_Index == bEndpointNumber){
                     MscWriteControl.bCurrentBufferXY = 0;   //Set current buffer to X
                     MscState.bMcsCommandSupported = TRUE;
                 }
-#endif
+                #endif
 
-#ifdef _CDC_
+                #ifdef _CDC_
                 /* search to EP correspdonding IF */
-                for(i = 0; i < CDC_NUM_INTERFACES; ++i)  //bug 16626
+                for(uint8_t i = 0; i < CDC_NUM_INTERFACES; ++i)  //bug 16626
                 {
-                  if(stUsbHandle[i].edb_Index == bEndpointNumber)
-                  {
-                    CdcWriteCtrl[i].bCurrentBufferXY = X_BUFFER;
-                    break;
-                  }
-                    
+                    if(stUsbHandle[i].edb_Index == bEndpointNumber){
+                        CdcWriteCtrl[i].bCurrentBufferXY = X_BUFFER;
+                        break;
+                    }
                 }
-#endif
-
+                #endif
             }
             usbSendZeroLengthPacketOnIEP0();
         }
     }
-
     return (FALSE);
 }
 
@@ -1219,7 +1209,7 @@ uint8_t usbClearEndpointFeature (void)
 
 uint8_t usbGetConfiguration (void)
 {
-    usbClearOEP0ByteCount();                                //for status stage
+    usbClearOEP0ByteCount();  //for status stage
     wBytesRemainingOnIEP0 = 1;
     usbSendDataPacketOnEP0((uint8_t*)&bConfigurationNumber);
 
@@ -1232,11 +1222,11 @@ uint8_t usbGetDeviceDescriptor (void)
 {
     usbClearOEP0ByteCount();
     wBytesRemainingOnIEP0 = SIZEOF_DEVICE_DESCRIPTOR;
-#ifdef NON_COMPOSITE_MULTIPLE_INTERFACES
-    usbSendDataPacketOnEP0((uint8_t*)usbDeviceDescriptors[activeInterfaceIndex]);
-#else
-    usbSendDataPacketOnEP0((uint8_t*)&abromDeviceDescriptor);
-#endif
+    #ifdef NON_COMPOSITE_MULTIPLE_INTERFACES
+        usbSendDataPacketOnEP0((uint8_t*)usbDeviceDescriptors[activeInterfaceIndex]);
+    #else
+        usbSendDataPacketOnEP0((uint8_t*)&abromDeviceDescriptor);
+    #endif
     return (FALSE);
 }
 
@@ -1245,14 +1235,13 @@ uint8_t usbGetDeviceDescriptor (void)
 uint8_t usbGetConfigurationDescriptor (void)
 {
     usbClearOEP0ByteCount();
-#ifdef NON_COMPOSITE_MULTIPLE_INTERFACES
-    wBytesRemainingOnIEP0 = usbConfigurationsSizes[activeInterfaceIndex];
-    usbSendDataPacketOnEP0((uint8_t*)usbConfigurationDescriptors[activeInterfaceIndex]);
-#else
-    wBytesRemainingOnIEP0 = sizeof(abromConfigurationDescriptorGroup);
-    usbSendDataPacketOnEP0((uint8_t*)&abromConfigurationDescriptorGroup);
-#endif	
-
+    #ifdef NON_COMPOSITE_MULTIPLE_INTERFACES
+        wBytesRemainingOnIEP0 = usbConfigurationsSizes[activeInterfaceIndex];
+        usbSendDataPacketOnEP0((uint8_t*)usbConfigurationDescriptors[activeInterfaceIndex]);
+    #else
+        wBytesRemainingOnIEP0 = sizeof(abromConfigurationDescriptorGroup);
+        usbSendDataPacketOnEP0((uint8_t*)&abromConfigurationDescriptorGroup);
+    #endif	
     return (FALSE);
 }
 
@@ -1265,15 +1254,18 @@ uint8_t usbGetStringDescriptor (void)
 
     usbClearOEP0ByteCount();    //for status stage
     if (bVal <= MAX_STRING_DESCRIPTOR_INDEX) {
-#if (USB_STR_INDEX_SERNUM != 0)
+        #if (USB_STR_INDEX_SERNUM != 0)
         if (bVal == 0x03){
             wBytesRemainingOnIEP0 = abramSerialStringDescriptor[0];
             usbSendDataPacketOnEP0((uint8_t*)&abramSerialStringDescriptor);
-        } else
-#endif
+        } 
+        else
+        #endif
         {
             bIndex = 0x00;
-            while (bVal-- >  0x00) bIndex += abromStringDescriptor[bIndex];
+            while (bVal-- >  0x00) {
+                bIndex += abromStringDescriptor[bIndex];
+            }
             wBytesRemainingOnIEP0 = abromStringDescriptor[bIndex];
             usbSendDataPacketOnEP0((uint8_t*)&abromStringDescriptor[bIndex]);
         }
@@ -1303,24 +1295,23 @@ uint8_t usbGetInterface (void)
 
 uint8_t usbGetDeviceStatus (void)
 {
-#ifdef NON_COMPOSITE_MULTIPLE_INTERFACES
+    #ifdef NON_COMPOSITE_MULTIPLE_INTERFACES
 	if ((((struct abromConfigurationDescriptorGroup *)
 		usbConfigurationDescriptors[activeInterfaceIndex])->
 		abromConfigurationDescriptorGenric.mattributes  &
 		CFG_DESC_ATTR_SELF_POWERED) == CFG_DESC_ATTR_SELF_POWERED){
         abUsbRequestReturnData[0] = DEVICE_STATUS_SELF_POWER;
     }
-#else
+    #else
     if ((abromConfigurationDescriptorGroup.abromConfigurationDescriptorGenric.
-         mattributes &
-         CFG_DESC_ATTR_SELF_POWERED) == CFG_DESC_ATTR_SELF_POWERED){
+         mattributes & CFG_DESC_ATTR_SELF_POWERED) == CFG_DESC_ATTR_SELF_POWERED){
         abUsbRequestReturnData[0] = DEVICE_STATUS_SELF_POWER;
     }
-#endif	
+    #endif	
     if (bRemoteWakeup == ENABLE){
         abUsbRequestReturnData[0] |= DEVICE_STATUS_REMOTE_WAKEUP;
     }
-    usbClearOEP0ByteCount();            //for status stage
+    usbClearOEP0ByteCount(); //for status stage
 
     //Return self power status and remote wakeup status
     wBytesRemainingOnIEP0 = 2;
@@ -1334,7 +1325,7 @@ uint8_t usbGetDeviceStatus (void)
 uint8_t usbGetInterfaceStatus (void)
 {
     //check bIndexL for index number (not supported)
-    usbClearOEP0ByteCount();            //for status stage
+    usbClearOEP0ByteCount();      //for status stage
 
     //Return two zero bytes
     wBytesRemainingOnIEP0 = 2;
@@ -1354,12 +1345,12 @@ uint8_t usbGetEndpointStatus (void)
     //Endpoint number is bIndexL
     bEndpointNumber = tSetupPacket.wIndex & EP_DESC_ADDR_EP_NUM;
     if (bEndpointNumber == 0x00){
-        if ((tSetupPacket.wIndex & EP_DESC_ADDR_DIR_IN) ==
-            EP_DESC_ADDR_DIR_IN){
+        if ((tSetupPacket.wIndex & EP_DESC_ADDR_DIR_IN) == EP_DESC_ADDR_DIR_IN){
             //input endpoint 0
             abUsbRequestReturnData[0] =
                 (uint8_t)(tEndPoint0DescriptorBlock.bIEPCNFG & EPCNF_STALL);
-        } else {
+        } 
+        else {
             //output endpoint 0
             abUsbRequestReturnData[0] =
                 (uint8_t)(tEndPoint0DescriptorBlock.bOEPCNFG & EPCNF_STALL);
@@ -1368,7 +1359,8 @@ uint8_t usbGetEndpointStatus (void)
         usbClearOEP0ByteCount();                                    //for status stage
         wBytesRemainingOnIEP0 = 0x02;
         usbSendDataPacketOnEP0((uint8_t*)&abUsbRequestReturnData[0]);
-    } else {
+    } 
+    else {
         bEndpointNumber--;
         //EP is from EP1 to EP7 while C language start from 0
         //Firmware should NOT response if specified endpoint is not supported. (charpter 8)
@@ -1376,17 +1368,15 @@ uint8_t usbGetEndpointStatus (void)
             if (tSetupPacket.wIndex & EP_DESC_ADDR_DIR_IN){
                 //input endpoint
                 abUsbRequestReturnData[0] =
-                    (uint8_t)(tInputEndPointDescriptorBlock[bEndpointNumber].
-                           bEPCNF &
-                           EPCNF_STALL);
-            } else {
+                    (uint8_t)(tInputEndPointDescriptorBlock[bEndpointNumber].bEPCNF & EPCNF_STALL);
+            } 
+            else {
                 //output endpoint
                 abUsbRequestReturnData[0] =
-                    (uint8_t)(tOutputEndPointDescriptorBlock[bEndpointNumber].
-                           bEPCNF &
-                           EPCNF_STALL);
+                    (uint8_t)(tOutputEndPointDescriptorBlock[bEndpointNumber].bEPCNF & EPCNF_STALL);
             }
-        }                                                           //no response if endpoint is not supported.
+        }                                                           
+        //no response if endpoint is not supported.
         abUsbRequestReturnData[0] = abUsbRequestReturnData[0] >> 3; //STALL is on bit 3
         usbClearOEP0ByteCount();
         wBytesRemainingOnIEP0 = 0x02;
@@ -1399,7 +1389,7 @@ uint8_t usbGetEndpointStatus (void)
 //----------------------------------------------------------------------------
 uint8_t usbSetAddress (void)
 {
-    usbStallOEP0();                                                 //control write without data stage
+    usbStallOEP0(); //control write without data stage
 
     //bValueL contains device address
     if (tSetupPacket.wValue < 128){
@@ -1407,7 +1397,8 @@ uint8_t usbSetAddress (void)
         //therefore, firmware can set the address now.
         USBFUNADR = tSetupPacket.wValue;
         usbSendZeroLengthPacketOnIEP0();
-    } else {
+    } 
+    else {
         usbStallEndpoint0();
     }
 
@@ -1420,7 +1411,7 @@ uint8_t usbSetConfiguration (void)
 {
 	uint8_t bWakeUp = FALSE;
 
-    usbStallOEP0();                                                 //control write without data stage
+    usbStallOEP0();  //control write without data stage
 
     //configuration number is in bValueL
     //change the code if more than one configuration is supported
@@ -1428,11 +1419,14 @@ uint8_t usbSetConfiguration (void)
     usbSendZeroLengthPacketOnIEP0();
 
     if (bConfigurationNumber == 1){
-        bEnumerationStatus = ENUMERATION_COMPLETE;                  //set device as enumerated
+        //set device as enumerated
+        bEnumerationStatus = ENUMERATION_COMPLETE;
         //perform enumeration complete event:
         bWakeUp = USB_handleEnumerationCompleteEvent();
-    } else {
-        bEnumerationStatus = 0;                                     //device is not configured == config # is zero
+    } 
+    else {
+        //device is not configured == config # is zero
+        bEnumerationStatus = 0;
     }
 
     return (bWakeUp);
@@ -1446,7 +1440,8 @@ uint8_t usbClearDeviceFeature (void)
     if (tSetupPacket.wValue == FEATURE_REMOTE_WAKEUP){
         bRemoteWakeup = DISABLE;
         usbSendZeroLengthPacketOnIEP0();
-    } else {
+    } 
+    else {
         usbStallEndpoint0();
     }
 
@@ -1461,7 +1456,8 @@ uint8_t usbSetDeviceFeature (void)
     if (tSetupPacket.wValue == FEATURE_REMOTE_WAKEUP){
         bRemoteWakeup = ENABLE;
         usbSendZeroLengthPacketOnIEP0();
-    } else {
+    } 
+    else {
         usbStallEndpoint0();
     }
 
@@ -1481,23 +1477,24 @@ uint8_t usbSetEndpointFeature (void)
         bEndpointNumber = tSetupPacket.wIndex & EP_DESC_ADDR_EP_NUM;
         if (bEndpointNumber == 0x00){
             usbSendZeroLengthPacketOnIEP0();    //do nothing for endpoint 0
-        } else {
+        } 
+        else {
             bEndpointNumber--;
             //Firmware should NOT response if specified endpoint is not supported. (charpter 8)
             if (bEndpointNumber < MAX_ENDPOINT_NUMBER){
                 if (tSetupPacket.wIndex & EP_DESC_ADDR_DIR_IN){
                     //input endpoint
-                    tInputEndPointDescriptorBlock[bEndpointNumber].bEPCNF |=
-                        EPCNF_STALL;
-                } else {
+                    tInputEndPointDescriptorBlock[bEndpointNumber].bEPCNF |= EPCNF_STALL;
+                } 
+                else {
                     //output endpoint
-                    tOutputEndPointDescriptorBlock[bEndpointNumber].bEPCNF |=
-                        EPCNF_STALL;
+                    tOutputEndPointDescriptorBlock[bEndpointNumber].bEPCNF |= EPCNF_STALL;
                 }
                 usbSendZeroLengthPacketOnIEP0();
             } //no response if endpoint is not supported.
         }
-    } else {
+    } 
+    else {
         usbStallEndpoint0();
     }
 
@@ -1511,16 +1508,16 @@ uint8_t usbSetInterface (void)
     //bValueL contains alternative setting
     //bIndexL contains interface number
     //change code if more than one interface is supported
-    usbStallOEP0();                         //control write without data stage
+    usbStallOEP0();   //control write without data stage
     bInterfaceNumber = tSetupPacket.wIndex;
-#ifdef _MSC_
-    tInputEndPointDescriptorBlock[stUsbHandle[MSC0_INTFNUM].edb_Index].bEPCNF
-        &= ~(EPCNF_TOGGLE);
-    tOutputEndPointDescriptorBlock[stUsbHandle[MSC0_INTFNUM].edb_Index].bEPCNF
-        &= ~(EPCNF_TOGGLE);
-    MscReadControl.bCurrentBufferXY = 0;    //Set current buffer to X
-    MscWriteControl.bCurrentBufferXY = 0;   //Set current buffer to X
-#endif
+    #ifdef _MSC_
+        tInputEndPointDescriptorBlock[stUsbHandle[MSC0_INTFNUM].edb_Index].bEPCNF
+            &= ~(EPCNF_TOGGLE);
+        tOutputEndPointDescriptorBlock[stUsbHandle[MSC0_INTFNUM].edb_Index].bEPCNF
+            &= ~(EPCNF_TOGGLE);
+        MscReadControl.bCurrentBufferXY = 0;    //Set current buffer to X
+        MscWriteControl.bCurrentBufferXY = 0;   //Set current buffer to X
+    #endif
     usbSendZeroLengthPacketOnIEP0();
 
     return (FALSE);
@@ -1571,13 +1568,11 @@ uint8_t usbDecodeAndProcessUsbRequest (void)
 
         if (((bRequestType == 0xff) && (bRequest == 0xff)) ||
             (tSetupPacket.bmRequestType ==
-             (USB_REQ_TYPE_INPUT | USB_REQ_TYPE_VENDOR |
-              USB_REQ_TYPE_DEVICE)) ||
+             (USB_REQ_TYPE_INPUT | USB_REQ_TYPE_VENDOR | USB_REQ_TYPE_DEVICE)) ||
             (tSetupPacket.bmRequestType ==
-             (USB_REQ_TYPE_OUTPUT | USB_REQ_TYPE_VENDOR |
-              USB_REQ_TYPE_DEVICE))){
-            pbUsbRequestList -= 2;
-            break;
+             (USB_REQ_TYPE_OUTPUT | USB_REQ_TYPE_VENDOR | USB_REQ_TYPE_DEVICE))){
+                pbUsbRequestList -= 2;
+                break;
         }
 
         if ((bRequestType == tSetupPacket.bmRequestType) &&
@@ -1598,10 +1593,12 @@ uint8_t usbDecodeAndProcessUsbRequest (void)
             if ((*pbUsbRequestList & bResult) == *pbUsbRequestList){
                 pbUsbRequestList -= 8;
                 break;
-            } else {
+            } 
+            else {
                 pbUsbRequestList += (sizeof(tDEVICE_REQUEST_COMPARE) - 8);
             }
-        } else {
+        } 
+        else {
             pbUsbRequestList += (sizeof(tDEVICE_REQUEST_COMPARE) - 2);
         }
     }
@@ -1631,10 +1628,12 @@ uint16_t usbDisableInEndpointInterrupt(uint8_t edbIndex)
 	USBIEPIE &= ~(1 << (edbIndex + 1));
 	return (state);
 }
+
 void usbRestoreInEndpointInterrupt(uint16_t state)
 {
 	USBIEPIE |= state;
 }
+
 uint16_t usbDisableOutEndpointInterrupt(uint8_t edbIndex)
 {
 	uint16_t state;
@@ -1642,10 +1641,12 @@ uint16_t usbDisableOutEndpointInterrupt(uint8_t edbIndex)
 	USBOEPIE &= ~(1 << (edbIndex + 1));
 	return (state);
 }
+
 void usbRestoreOutEndpointInterrupt(uint16_t state)
 {
 	USBOEPIE |= state;
 }
+
 #ifdef NON_COMPOSITE_MULTIPLE_INTERFACES
 
 uint8_t USB_switchInterface(uint8_t interfaceIndex)
@@ -1663,10 +1664,10 @@ uint8_t USB_switchInterface(uint8_t interfaceIndex)
 
 uint16_t USB_determineFreq(void){
     uint16_t freq = 0;                  // calculated MCLK freq in kHz
-    uint16_t currentFLLN;           // value of divider N taken from UCS registers
-    uint8_t currentSELM;           // MCLK reference taken from UCS registers
-    uint8_t currentFLLREFDIV;      // value of divider n taken from UCS registers
-    uint16_t currentFLLD;           // value of prescalar D taken from UCS registers
+    uint16_t currentFLLN;               // value of divider N taken from UCS registers
+    uint8_t currentSELM;                // MCLK reference taken from UCS registers
+    uint8_t currentFLLREFDIV;           // value of divider n taken from UCS registers
+    uint16_t currentFLLD;               // value of prescalar D taken from UCS registers
     uint16_t FLLRefFreq;
 
     currentSELM = (UCSCTL4_L & SELM_7);   // get clock selection control register

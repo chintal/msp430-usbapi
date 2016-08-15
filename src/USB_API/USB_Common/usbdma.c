@@ -34,10 +34,7 @@
 /* 
  * ======== dma.c ========
  */
-#include <string.h>
-
 #include "msp430-driverlib/MSP430F5xx_6xx/driverlib.h"
-
 #include "../USB_Common/device.h"
 #include "../USB_Common/defMSP430USB.h"
 #include <descriptors.h>
@@ -63,8 +60,8 @@ void * memcpyDMA0 (void * dest, const void * source, size_t count);
 void * memcpyDMA1 (void * dest, const void * source, size_t count);
 void * memcpyDMA2 (void * dest, const void * source, size_t count);
 
-void * memcpyV (void * dest, const void * source, size_t count);
-void * memcpyDMA (void * dest, const void *  source, size_t count);
+void * memcpyV   (void * dest, const void * source, size_t count);
+void * memcpyDMA (void * dest, const void * source, size_t count);
 void USB_initMemcpy (void);
 
 //NOTE: this functin works only with data in the area <64k (small memory model)

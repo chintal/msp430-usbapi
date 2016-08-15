@@ -86,15 +86,15 @@ void CdcResetData (void)
         CdcControl[i].bDataBits = 8;
     }
 }
+
+
 /*
  * Sends data over interface intfNum, of size size and starting at address data.
 
  * Returns:  USBCDC_SEND_STARTED
- *          USBCDC_SEND_COMPLETE
- *          USBCDC_INTERFACE_BUSY_ERROR
+ *           USBCDC_SEND_COMPLETE
+ *           USBCDC_INTERFACE_BUSY_ERROR
  */
-
-
 uint8_t USBCDC_sendData (const uint8_t* data, uint16_t size, uint8_t intfNum)
 {
     uint8_t edbIndex;
@@ -109,30 +109,30 @@ uint8_t USBCDC_sendData (const uint8_t* data, uint16_t size, uint8_t intfNum)
     state = usbDisableInEndpointInterrupt(edbIndex);
 
     //do not access USB memory if suspended (PLL uce BUS_ERROR
-    if ((bFunctionSuspended) ||
-        (bEnumerationStatus != ENUMERATION_COMPLETE)){
+    if ((bFunctionSuspended) || (bEnumerationStatus != ENUMERATION_COMPLETE)){
         //data can not be read because of USB suspended
-    	usbRestoreInEndpointInterrupt(state);                                            //restore interrupt status
+        //restore interrupt status
+        usbRestoreInEndpointInterrupt(state);
         return (USBCDC_BUS_NOT_AVAILABLE);
     }
 
     if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft != 0){
         //the USB still sends previous data, we have to wait
-    	usbRestoreInEndpointInterrupt(state);                                           //restore interrupt status
+        //restore interrupt status
+        usbRestoreInEndpointInterrupt(state);
         return (USBCDC_INTERFACE_BUSY_ERROR);
     }
 
     //This function generate the USB interrupt. The data will be sent out from interrupt
-
+    
     CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSend = size;
     CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft = size;
     CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].pUsbBufferToSend = data;
 
     //trigger Endpoint Interrupt - to start send operation
-    USBIEPIFG |= 1 << (edbIndex + 1);                                       //IEPIFGx;
+    USBIEPIFG |= 1 << (edbIndex + 1);            //IEPIFGx;
 
     usbRestoreInEndpointInterrupt(state);
-
     return (USBCDC_SEND_STARTED);
 }
 
@@ -142,38 +142,31 @@ uint8_t USBCDC_sendData (const uint8_t* data, uint16_t size, uint8_t intfNum)
 int16_t CdcToHostFromBuffer (uint8_t intfNum);
 
 //this function is used only by USB interrupt
-int16_t CdcToHostFromBuffer (uint8_t intfNum)
-{
+int16_t CdcToHostFromBuffer (uint8_t intfNum){
     uint8_t byte_count, nTmp2;
     uint8_t * pEP1;
     uint8_t * pEP2;
     uint8_t * pCT1;
     uint8_t * pCT2;
-    uint8_t bWakeUp = FALSE;                                                   //TRUE for wake up after interrupt
+    uint8_t bWakeUp = FALSE;   //TRUE for wake up after interrupt
     uint8_t edbIndex;
 
     edbIndex = stUsbHandle[intfNum].edb_Index;
 
-    if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft == 0){    //do we have somtething to send?
-        if (!CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bZeroPacketSent){        //zero packet was not yet sent
+    if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft == 0){    // Are we nearly done?
+        if (!CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bZeroPacketSent){        // zero packet was not yet sent
             CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bZeroPacketSent = TRUE;
-
-            if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].last_ByteSend ==
-                EP_MAX_PACKET_SIZE_CDC){
-                if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY ==
-                    X_BUFFER){
-                    if (tInputEndPointDescriptorBlock[edbIndex].bEPBCTX &
-                        EPBCNT_NAK){
+            if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].last_ByteSend == EP_MAX_PACKET_SIZE_CDC){
+                if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY == X_BUFFER){
+                    if (tInputEndPointDescriptorBlock[edbIndex].bEPBCTX & EPBCNT_NAK){
                         tInputEndPointDescriptorBlock[edbIndex].bEPBCTX = 0;
-                        CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY
-                            = Y_BUFFER;                                     //switch buffer
+                        CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY = Y_BUFFER; //switch buffer
                     }
-                } else {
-                    if (tInputEndPointDescriptorBlock[edbIndex].bEPBCTY &
-                        EPBCNT_NAK){
+                } 
+                else {
+                    if (tInputEndPointDescriptorBlock[edbIndex].bEPBCTY & EPBCNT_NAK){
                         tInputEndPointDescriptorBlock[edbIndex].bEPBCTY = 0;
-                        CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY
-                            = X_BUFFER;                                     //switch buffer
+                        CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY = X_BUFFER; //switch buffer
                     }
                 }
             }
@@ -184,12 +177,12 @@ int16_t CdcToHostFromBuffer (uint8_t intfNum)
             if (wUsbEventMask & USB_SEND_COMPLETED_EVENT){
                 bWakeUp = USBCDC_handleSendCompleted(intfNum);
             }
-        } //if (!bSentZeroPacket)
-
+        }
         return (bWakeUp);
     }
-
-    CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bZeroPacketSent = FALSE;          //zero packet will be not sent: we have data
+    
+    //zero packet will be not sent: we have data
+    CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bZeroPacketSent = FALSE;
 
     if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY == X_BUFFER){
         //this is the active EP buffer
@@ -199,7 +192,8 @@ int16_t CdcToHostFromBuffer (uint8_t intfNum)
         //second EP buffer
         pEP2 = (uint8_t*)stUsbHandle[intfNum].iep_Y_Buffer;
         pCT2 = &tInputEndPointDescriptorBlock[edbIndex].bEPBCTY;
-    } else {
+    } 
+    else {
         //this is the active EP buffer
         pEP1 = (uint8_t*)stUsbHandle[intfNum].iep_Y_Buffer;
         pCT1 = &tInputEndPointDescriptorBlock[edbIndex].bEPBCTY;
@@ -210,21 +204,25 @@ int16_t CdcToHostFromBuffer (uint8_t intfNum)
     }
 
     //how many byte we can send over one endpoint buffer
-    byte_count =
-        (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft >
-         EP_MAX_PACKET_SIZE_CDC) ? EP_MAX_PACKET_SIZE_CDC : CdcWriteCtrl[
-            INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft;
+    if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft > EP_MAX_PACKET_SIZE_CDC){
+        byte_count = EP_MAX_PACKET_SIZE_CDC;
+    }
+    else{
+        byte_count = CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft;
+    }
     nTmp2 = *pCT1;
 
     if (nTmp2 & EPBCNT_NAK){
-        USB_TX_memcpy(pEP1, CdcWriteCtrl[INTFNUM_OFFSET(
-                                             intfNum)].pUsbBufferToSend,
-            byte_count);                                                            //copy data into IEP3 X or Y buffer
-        *pCT1 = byte_count;                                                         //Set counter for usb In-Transaction
+        //copy data into IEP3 X or Y buffer
+        USB_TX_memcpy(pEP1, CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].pUsbBufferToSend, byte_count);
+        //Set counter for usb In-Transaction
+        *pCT1 = byte_count;
+        //switch buffer
         CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY =
-            (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY + 1) & 0x01;    //switch buffer
+            (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY + 1) & 0x01;
         CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft -= byte_count;
-        CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].pUsbBufferToSend += byte_count;       //move buffer pointer
+        //move buffer pointer
+        CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].pUsbBufferToSend += byte_count;
         CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].last_ByteSend = byte_count;
 
         //try to send data over second buffer
@@ -232,46 +230,41 @@ int16_t CdcToHostFromBuffer (uint8_t intfNum)
         if ((CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft > 0) &&      //do we have more data to send?
             (nTmp2 & EPBCNT_NAK)){                                                  //if the second buffer is free?
             //how many byte we can send over one endpoint buffer
-            byte_count =
-                (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft >
-                 EP_MAX_PACKET_SIZE_CDC) ? EP_MAX_PACKET_SIZE_CDC :
-                CdcWriteCtrl[
-                    INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft;
+            if (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft > EP_MAX_PACKET_SIZE_CDC){
+                byte_count = EP_MAX_PACKET_SIZE_CDC;
+            }
+            else{
+                byte_count = CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft;
+            }
 
-            USB_TX_memcpy(pEP2, CdcWriteCtrl[INTFNUM_OFFSET(
-                                                 intfNum)].pUsbBufferToSend,
-                byte_count);                                                        //copy data into IEP3 X or Y buffer
-            *pCT2 = byte_count;                                                     //Set counter for usb In-Transaction
+            USB_TX_memcpy(pEP2, CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].pUsbBufferToSend, byte_count);                                                        //copy data into IEP3 X or Y buffer
+            *pCT2 = byte_count;                                                      //Set counter for usb In-Transaction
             CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY =
-                (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY +
-                 1) & 0x01;                                                         //switch buffer
-            CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft -=
-                byte_count;
-            CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].pUsbBufferToSend +=
-                byte_count;                                                         //move buffer pointer
+                (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY + 1) & 0x01; //switch buffer
+            CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft -= byte_count;
+            CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].pUsbBufferToSend += byte_count;    //move buffer pointer
             CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].last_ByteSend = byte_count;
         }
     }
     return (bWakeUp);
 }
 
+
 /*
- * Aborts an active send operation on interface intfNum.  Returns the number of bytes that were sent prior to the abort, in size.
+ * Aborts an active send operation on interface intfNum.  
+ * Returns the number of bytes that were sent prior to the abort, in size.
  */
-
-
-uint8_t USBCDC_abortSend (uint16_t* size, uint8_t intfNum)
-{
+uint8_t USBCDC_abortSend (uint16_t* size, uint8_t intfNum){
     uint8_t edbIndex;
     uint16_t state;
 
     edbIndex = stUsbHandle[intfNum].edb_Index;
+    
+    //disable interrupts - atomic operation
+    state = usbDisableInEndpointInterrupt(edbIndex);
 
-    state = usbDisableInEndpointInterrupt(edbIndex);                                                         //disable interrupts - atomic operation
-
-    *size =
-        (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSend -
-         CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft);
+    *size = (CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSend -
+             CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft);
     CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSend = 0;
     CdcWriteCtrl[INTFNUM_OFFSET(intfNum)].nCdcBytesToSendLeft = 0;
 
@@ -292,37 +285,38 @@ void CopyUsbToBuff (uint8_t* pEP, uint8_t* pCT, uint8_t intfNum)
     uint8_t nCount;
 
     //how many byte we can get from one endpoint buffer
-    nCount =
-        (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft >
-         CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp) ? CdcReadCtrl[
-            INTFNUM_OFFSET(intfNum)].nBytesInEp : CdcReadCtrl[INTFNUM_OFFSET(
-                                                                  intfNum)].
-        nBytesToReceiveLeft;
+    if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft > CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp){
+        nCount = CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp;
+    }
+    else{
+        nCount = CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft;
+    }
 
-    USB_RX_memcpy(CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer, pEP, nCount);   //copy data from OEP3 X or Y buffer
+    //copy data from OEP3 X or Y buffer
+    USB_RX_memcpy(CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer, pEP, nCount);   
     CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft -= nCount;
-    CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer += nCount;                     //move buffer pointer
+    //move buffer pointer
+    CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer += nCount;
     //to read rest of data next time from this place
 
-    if (nCount == CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp){                 //all bytes are copied from receive buffer?
+    //all bytes are copied from receive buffer?
+    if (nCount == CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp){                 
         //switch current buffer
         CdcReadCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY =
             (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY + 1) & 0x01;
-
         CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp = 0;
-
         //clear NAK, EP ready to receive data
         *pCT = 0x00;
-    } else {
+    } 
+    else {
         CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp -= nCount;
         CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos = pEP + nCount;
     }
 }
+
 /*
  * Receives data over interface intfNum, of size size, into memory starting at address data.
  */
-
-
 uint8_t USBCDC_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
 {
     uint8_t nTmp1;
@@ -336,19 +330,19 @@ uint8_t USBCDC_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
         return (USBCDC_GENERAL_ERROR);
     }
 
-    state = usbDisableOutEndpointInterrupt(edbIndex);
     //atomic operation - disable interrupts
+    state = usbDisableOutEndpointInterrupt(edbIndex);
 
     //do not access USB memory if suspended (PLL off). It may produce BUS_ERROR
-    if ((bFunctionSuspended) ||
-        (bEnumerationStatus != ENUMERATION_COMPLETE)){
+    if ((bFunctionSuspended) || (bEnumerationStatus != ENUMERATION_COMPLETE)){
         //data can not be read because of USB suspended
-    	usbRestoreOutEndpointInterrupt(state);
+        usbRestoreOutEndpointInterrupt(state);
         return (USBCDC_BUS_NOT_AVAILABLE);
     }
 
-    if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer != NULL){          //receive process already started
-    	usbRestoreOutEndpointInterrupt(state);
+    if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer != NULL){
+        //receive process already started
+        usbRestoreOutEndpointInterrupt(state);
         return (USBCDC_INTERFACE_BUSY_ERROR);
     }
 
@@ -359,11 +353,8 @@ uint8_t USBCDC_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
     //read rest of data from buffer, if any
     if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp > 0){
         //copy data from pEP-endpoint into User's buffer
-        CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(
-                                      intfNum)].pCurrentEpPos,
-            CdcReadCtrl[INTFNUM_OFFSET(
-                            intfNum)
-            ].pCT1, intfNum);
+        CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos,
+                      CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1, intfNum);
 
         if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft == 0){ //the Receive opereation is completed
             CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer = NULL;        //no more receiving pending
@@ -375,17 +366,13 @@ uint8_t USBCDC_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
         }
 
         //check other EP buffer for data - exchange pCT1 with pCT2
-        if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 ==
-            &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX){
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 =
-                &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos =
-                (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
-        } else {
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 =
-                &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos =
-                (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
+        if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 == &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX){
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos = (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
+        } 
+        else {
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos = (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
         }
 
         nTmp1 = *CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1;
@@ -393,9 +380,8 @@ uint8_t USBCDC_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
         if (nTmp1 & EPBCNT_NAK){                                            //if the second buffer has received data?
             nTmp1 = nTmp1 & 0x7f;                                           //clear NAK bit
             CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp = nTmp1;        //holds how many valid bytes in the EP buffer
-            CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(
-                                          intfNum)].pCurrentEpPos,
-                CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1, intfNum);
+            CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos,
+                          CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1, intfNum);
         }
 
         if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft == 0){ //the Receive opereation is completed
@@ -414,32 +400,25 @@ uint8_t USBCDC_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
         if (tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX & EPBCNT_NAK){ //this buffer has a valid data packet
             //this is the active EP buffer
             //pEP1
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos =
-                (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 =
-                &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos = (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
 
             //second EP buffer
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2 =
-                (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 =
-                &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
-            nTmp1 = 1;                                                      //indicate that data is available
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2 = (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
+            nTmp1 = 1;             //indicate that data is available
         }
-    } else {                                                                //Y_BUFFER
+    } 
+    else {                                                      //Y_BUFFER
         if (tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY & EPBCNT_NAK){
             //this is the active EP buffer
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos =
-                (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 =
-                &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos = (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
 
             //second EP buffer
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2 =
-                (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 =
-                &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
-            nTmp1 = 1;                                                      //indicate that data is available
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2 = (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
+            nTmp1 = 1;             //indicate that data is available
         }
     }
 
@@ -455,22 +434,18 @@ uint8_t USBCDC_receiveData (uint8_t* data, uint16_t size, uint8_t intfNum)
             nTmp1 = nTmp1 & 0x7f;                                           //clear NAK bit
             CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp = nTmp1;        //holds how many valid bytes in the EP buffer
 
-            CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(
-                                          intfNum)].pCurrentEpPos,
-                CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1, intfNum);
+            CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCurrentEpPos,
+                          CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1, intfNum);
 
             nTmp1 = *CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2;
             //try read data from second buffer
-            if ((CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft >
-                 0) &&                                                      //do we have more data to send?
+            if ((CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft > 0) &&   //do we have more data to send?
                 (nTmp1 & EPBCNT_NAK)){                                      //if the second buffer has received data?
                 nTmp1 = nTmp1 & 0x7f;                                       //clear NAK bit
                 CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp = nTmp1;    //holds how many valid bytes in the EP buffer
-                CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(
-                                              intfNum)].pEP2,
-                    CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2, intfNum);
-                CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 =
-                    CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2;
+                CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2,
+                              CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2, intfNum);
+                CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 = CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2;
             }
         }
     }
@@ -518,25 +493,19 @@ int16_t CdcToBufferFromHost (uint8_t intfNum)
     if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY == X_BUFFER){ //X is current buffer
         //this is the active EP buffer
         pEP1 = (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
-        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 =
-            &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
+        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
 
         //second EP buffer
-        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2 =
-            (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
-        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 =
-            &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
+        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2 = (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
+        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
     } else {
         //this is the active EP buffer
         pEP1 = (uint8_t*)stUsbHandle[intfNum].oep_Y_Buffer;
-        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 =
-            &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
+        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY;
 
         //second EP buffer
-        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2 =
-            (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
-        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 =
-            &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
+        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2 = (uint8_t*)stUsbHandle[intfNum].oep_X_Buffer;
+        CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 = &tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX;
     }
 
     //how many byte we can get from one endpoint buffer
@@ -554,11 +523,9 @@ int16_t CdcToBufferFromHost (uint8_t intfNum)
             (nTmp1 & EPBCNT_NAK)){                                              //if the second buffer has received data?
             nTmp1 = nTmp1 & 0x7f;                                               //clear NAK bit
             CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp = nTmp1;            //holds how many valid bytes in the EP buffer
-            CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(
-                                          intfNum)].pEP2,
-                CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2, intfNum);
-            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 =
-                CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2;
+            CopyUsbToBuff(CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pEP2,
+                          CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2, intfNum);
+            CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT1 = CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2;
         }
     }
 
@@ -640,17 +607,13 @@ uint8_t USBCDC_rejectData (uint8_t intfNum)
     //Is receive operation underway?
     //- do not flush buffers if any operation still active.
     if (!CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer){
-        uint8_t tmp1 = tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX &
-                    EPBCNT_NAK;
-        uint8_t tmp2 = tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY &
-                    EPBCNT_NAK;
+        uint8_t tmp1 = tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX & EPBCNT_NAK;
+        uint8_t tmp2 = tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY & EPBCNT_NAK;
 
-        if (tmp1 ^ tmp2){                                                   //switch current buffer if any and only ONE of buffers
-                                                                            //is full
+        if (tmp1 ^ tmp2){ //switch current buffer if any and only ONE of buffers is full
             //switch current buffer
             CdcReadCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY =
-                (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY +
-                 1) & 0x01;
+                (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].bCurrentBufferXY + 1) & 0x01;
         }
 
         tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX = 0;               //flush buffer X
@@ -661,6 +624,7 @@ uint8_t USBCDC_rejectData (uint8_t intfNum)
     usbRestoreOutEndpointInterrupt(state);
     return (USB_SUCCEED);
 }
+
 /*
  * This function indicates the status of the interface intfNum.
  * If a send operation is active for this interface,
@@ -677,8 +641,6 @@ uint8_t USBCDC_rejectData (uint8_t intfNum)
  * returns USBCDC_DATA_WAITING (indicates that data has been received
  * from the host, waiting in the USB receive buffers)
  */
-
-
 uint8_t USBCDC_getInterfaceStatus (uint8_t intfNum, uint16_t* bytesSent, uint16_t* bytesReceived)
 {
     uint8_t ret = 0;
@@ -704,23 +666,21 @@ uint8_t USBCDC_getInterfaceStatus (uint8_t intfNum, uint16_t* bytesSent, uint16_
     if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pUserBuffer != NULL){
         ret |= USBCDC_WAITING_FOR_RECEIVE;
         *bytesReceived = CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceive -
-                         CdcReadCtrl[INTFNUM_OFFSET(intfNum)].
-                         nBytesToReceiveLeft;
-    } else {                                                                //receive operation not started
+                         CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesToReceiveLeft;
+    } 
+    else {                                                                //receive operation not started
         //do not access USB memory if suspended (PLL off).
         //It may produce BUS_ERROR
         if (!bFunctionSuspended){
-            if ((tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX &
-                 EPBCNT_NAK)  |                                             //any of buffers has a valid data packet
-                (tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY &
-                 EPBCNT_NAK)){
-                ret |= USBCDC_DATA_WAITING;
+            if ((tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX & EPBCNT_NAK)  |
+                (tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY & EPBCNT_NAK)){
+                    //any of buffers has a valid data packet
+                    ret |= USBCDC_DATA_WAITING;
             }
         }
     }
 
-    if ((bFunctionSuspended) ||
-        (bEnumerationStatus != ENUMERATION_COMPLETE)){
+    if ((bFunctionSuspended) || (bEnumerationStatus != ENUMERATION_COMPLETE)){
         //if suspended or not enumerated - report no other tasks pending
         ret = USBCDC_BUS_NOT_AVAILABLE;
     }
@@ -747,24 +707,27 @@ uint8_t USBCDC_getBytesInUSBBuffer (uint8_t intfNum)
     state = usbDisableOutEndpointInterrupt(edbIndex);
     //atomic operation - disable interrupts
 
-    if ((bFunctionSuspended) ||
-        (bEnumerationStatus != ENUMERATION_COMPLETE)){
+    if ((bFunctionSuspended) || (bEnumerationStatus != ENUMERATION_COMPLETE)){
     	usbRestoreOutEndpointInterrupt(state);
         //if suspended or not enumerated - report 0 bytes available
         return (0);
     }
 
-    if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp > 0){               //If a RX operation is underway, part of data may
-                                                                            //was read of the OEP buffer
+    if (CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp > 0){
+        //If a RX operation is underway, part of data may was read of the OEP buffer
         bTmp1 = CdcReadCtrl[INTFNUM_OFFSET(intfNum)].nBytesInEp;
-        if (*CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 & EPBCNT_NAK){       //the next buffer has a valid data packet
+        if (*CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 & EPBCNT_NAK){
+            //the next buffer has a valid data packet
             bTmp1 += *CdcReadCtrl[INTFNUM_OFFSET(intfNum)].pCT2 & 0x7F;
         }
-    } else {
-        if (tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX & EPBCNT_NAK){ //this buffer has a valid data packet
+    } 
+    else {
+        if (tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX & EPBCNT_NAK){
+            //this buffer has a valid data packet
             bTmp1 = tOutputEndPointDescriptorBlock[edbIndex].bEPBCTX & 0x7F;
         }
-        if (tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY & EPBCNT_NAK){ //this buffer has a valid data packet
+        if (tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY & EPBCNT_NAK){
+            //this buffer has a valid data packet
             bTmp1 += tOutputEndPointDescriptorBlock[edbIndex].bEPBCTY & 0x7F;
         }
     }
@@ -794,21 +757,13 @@ uint8_t usbGetLineCoding (void)
         infIndex = (tSetupPacket.wIndex) / 2;
     }
 
-    abUsbRequestReturnData[6] =
-        CdcControl[infIndex].bDataBits;          //Data bits = 8
-    abUsbRequestReturnData[5] =
-        CdcControl[infIndex].bParity;            //No Parity
-    abUsbRequestReturnData[4] =
-        CdcControl[infIndex].bStopBits;          //Stop bits = 1
-
-    abUsbRequestReturnData[3] =
-        CdcControl[infIndex].lBaudrate >> 24;
-    abUsbRequestReturnData[2] =
-        CdcControl[infIndex].lBaudrate >> 16;
-    abUsbRequestReturnData[1] =
-        CdcControl[infIndex].lBaudrate >> 8;
-    abUsbRequestReturnData[0] =
-        CdcControl[infIndex].lBaudrate;
+    abUsbRequestReturnData[6] = CdcControl[infIndex].bDataBits;          //Data bits = 8
+    abUsbRequestReturnData[5] = CdcControl[infIndex].bParity;            //No Parity
+    abUsbRequestReturnData[4] = CdcControl[infIndex].bStopBits;          //Stop bits = 1
+    abUsbRequestReturnData[3] = CdcControl[infIndex].lBaudrate >> 24;
+    abUsbRequestReturnData[2] = CdcControl[infIndex].lBaudrate >> 16;
+    abUsbRequestReturnData[1] = CdcControl[infIndex].lBaudrate >> 8;
+    abUsbRequestReturnData[0] = CdcControl[infIndex].lBaudrate;
 
     wBytesRemainingOnIEP0 = 0x07;                                           //amount of data to be send over EP0 to host
     usbSendDataPacketOnEP0((uint8_t*)&abUsbRequestReturnData[0]);              //send data to host
@@ -830,7 +785,7 @@ uint8_t usbSetLineCoding (void)
 uint8_t usbSetControlLineState (void)
 {
 	USBCDC_handleSetControlLineState((uint8_t)tSetupPacket.wIndex,
-            (uint8_t)tSetupPacket.wValue);
+                                     (uint8_t)tSetupPacket.wValue);
     usbSendZeroLengthPacketOnIEP0();                                        //Send ZLP for status stage
 
     return (FALSE);
@@ -857,11 +812,9 @@ uint8_t Handler_SetLineCoding (void)
     CdcControl[infIndex].lBaudrate =
         (uint32_t)abUsbRequestIncomingData[3] << 24 |
         (uint32_t)abUsbRequestIncomingData[2] << 16 |
-        (uint32_t)
-        abUsbRequestIncomingData[1] << 8 | abUsbRequestIncomingData[0];
-    bWakeUp =
-        USBCDC_handleSetLineCoding(tSetupPacket.wIndex,
-            CdcControl[infIndex].lBaudrate);
+        (uint32_t)abUsbRequestIncomingData[1] << 8  | 
+                  abUsbRequestIncomingData[0];
+    bWakeUp = USBCDC_handleSetLineCoding(tSetupPacket.wIndex, CdcControl[infIndex].lBaudrate);
 
     return (bWakeUp);
 }

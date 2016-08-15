@@ -47,10 +47,10 @@
 /*----------------------------------------------------------------------------+
 | External Variables                                                          |
 +----------------------------------------------------------------------------*/
-extern uint8_t bFunctionSuspended;
-extern __no_init_usb tEDB0 __data16 tEndPoint0DescriptorBlock;
-extern __no_init_usb tEDB __data16 tInputEndPointDescriptorBlock[];
-extern __no_init_usb tEDB __data16 tOutputEndPointDescriptorBlock[];
+extern uint8_t  bFunctionSuspended;
+extern __no_init tEDB0 __data16 tEndPoint0DescriptorBlock;
+extern __no_init tEDB __data16 tInputEndPointDescriptorBlock[];
+extern __no_init tEDB __data16 tOutputEndPointDescriptorBlock[];
 extern volatile uint8_t bHostAsksUSBData;
 extern volatile uint8_t bTransferInProgress;
 extern volatile uint8_t bSecondUartTxDataCounter[];
@@ -68,38 +68,39 @@ int16_t PHDCToHostFromBuffer(uint8_t);
 int16_t PHDCToBufferFromHost(uint8_t);
 int16_t PHDCIsReceiveInProgress(uint8_t);
 uint16_t USB_determineFreq(void);
-
-void iUsbInterruptHandler(void);
 /*----------------------------------------------------------------------------+
 | General Subroutines                                                         |
 +----------------------------------------------------------------------------*/
-
-__attribute__ ((interrupt(USB_UBM_VECTOR)))
-void iUsbInterruptHandler(void)
+#if defined(__TI_COMPILER_VERSION__) || (__IAR_SYSTEMS_ICC__) 
+#pragma vector=USB_UBM_VECTOR
+__interrupt void iUsbInterruptHandler(void)
+#elif defined(__GNUC__) && (__MSP430__)
+void __attribute__ ((interrupt(USB_UBM_VECTOR))) iUsbInterruptHandler(void)
+#endif
 {
     uint8_t bWakeUp = FALSE;
-    //Check if the setup interrupt is pending.
+//Check if the setup interrupt is pending.
     //We need to check it before other interrupts,
     //to work around that the Setup Int has lower priority then Input Endpoint 0
     if (USBIFG & SETUPIFG)
     {
         bWakeUp = SetupPacketInterruptHandler();  
-        #ifdef USB10_WORKAROUND
+#ifdef USB10_WORKAROUND
         tEndPoint0DescriptorBlock.bIEPCNFG &= ~EPCNF_UBME; // Clear ME to gate off SETUPIFG clear event
         tEndPoint0DescriptorBlock.bOEPCNFG &= ~EPCNF_UBME; // Clear ME to gate off SETUPIFG clear event
-        #endif
+#endif
         USBIFG &= ~SETUPIFG;    // clear the interrupt bit
-        #ifdef USB10_WORKAROUND
+#ifdef USB10_WORKAROUND
         tEndPoint0DescriptorBlock.bIEPCNFG |= EPCNF_UBME; // Set ME to continue with normal operation
         tEndPoint0DescriptorBlock.bOEPCNFG |= EPCNF_UBME; // Set ME to continue with normal operation
-        #endif
+#endif
     }   
-    switch (USBVECINT & 0x3f)
+    switch (__even_in_range(USBVECINT & 0x3f, USBVECINT_OUTPUT_ENDPOINT7))
     {
     case USBVECINT_NONE:
         break;
     case USBVECINT_PWR_DROP:
-        __no_operation();
+      __no_operation();
         break;
     case USBVECINT_PLL_LOCK:
         break;
@@ -164,28 +165,28 @@ void iUsbInterruptHandler(void)
         break;
     case USBVECINT_STPOW_PACKET_RECEIVED:
         break;
-    case USBVECINT_INPUT_ENDPOINT1:
+	case USBVECINT_INPUT_ENDPOINT1:
         break;
     case USBVECINT_INPUT_ENDPOINT2:
         //send saved bytes from buffer...
         bWakeUp = CdcToHostFromBuffer(CDC0_INTFNUM);
-        break;
+         break;
     case USBVECINT_INPUT_ENDPOINT3:
         break;
     case USBVECINT_INPUT_ENDPOINT4:
         //send saved bytes from buffer...
         bWakeUp = CdcToHostFromBuffer(CDC1_INTFNUM);
-        break;
+		break;
     case USBVECINT_INPUT_ENDPOINT5:
-        break;
+		break;
     case USBVECINT_INPUT_ENDPOINT6:
         //send saved bytes from buffer...
         bWakeUp = CdcToHostFromBuffer(CDC2_INTFNUM);
-        break;
+		break;
     case USBVECINT_INPUT_ENDPOINT7:
-        break;
+		break;
     case USBVECINT_OUTPUT_ENDPOINT1:
-        break;
+	    break;
     case USBVECINT_OUTPUT_ENDPOINT2:
         //call callback function if no receive operation is underway
         if (!CdcIsReceiveInProgress(CDC0_INTFNUM) && USBCDC_getBytesInUSBBuffer(CDC0_INTFNUM))
@@ -289,10 +290,9 @@ uint8_t SetupPacketInterruptHandler(void)
 //----------------------------------------------------------------------------
 void PWRVBUSoffHandler(void)
 {
-    // TODO Use standard timing functions instead?
-    uint16_t MCLKFreq = USB_determineFreq();
-    uint16_t DelayConstant_250us = ((MCLKFreq >> 6) + (MCLKFreq >> 7) + (MCLKFreq >> 9));
-    volatile uint16_t i, j;
+   uint16_t MCLKFreq = USB_determineFreq();
+   uint16_t DelayConstant_250us = ((MCLKFreq >> 6) + (MCLKFreq >> 7) + (MCLKFreq >> 9));
+   volatile uint16_t i, j;
 
     //wait 1 ms till enable USB 
     for(j = 0; j < 4; j++)
@@ -300,26 +300,25 @@ void PWRVBUSoffHandler(void)
         for (i = 0; i < (DelayConstant_250us); i++){
             _NOP();
         }
-    }
+   }
     if (!(USBPWRCTL & USBBGVBV))
     {
-        USBKEYPID = 0x9628;             // set KEY and PID to 0x9628 -> access to configuration registers enabled
+        USBKEYPID   =    0x9628;        // set KEY and PID to 0x9628 -> access to configuration registers enabled
         bEnumerationStatus = 0x00;      // device is not enumerated
         bFunctionSuspended = FALSE;     // device is not suspended
-        USBCNF = 0;                     // disable USB module
-        USBPLLCTL &= ~UPLLEN;           // disable PLL
+        USBCNF     =    0;              // disable USB module
+        USBPLLCTL  &=  ~UPLLEN;         // disable PLL
         USBPWRCTL &= ~(VBOFFIE + VBOFFIFG + SLDOEN);          // disable interrupt VBUSoff
-        USBKEYPID = 0x9600;             // access to configuration registers disabled
+        USBKEYPID   =    0x9600;        // access to configuration registers disabled
     }
 }
 
 //----------------------------------------------------------------------------
 void PWRVBUSonHandler(void)
 {
-    // TODO Use standard timing functions instead?
-    uint16_t MCLKFreq = USB_determineFreq();
-    uint16_t DelayConstant_250us = ((MCLKFreq >> 6) + (MCLKFreq >> 7) + (MCLKFreq >> 9));
-    volatile uint16_t i, j;
+   uint16_t MCLKFreq = USB_determineFreq();
+   uint16_t DelayConstant_250us = ((MCLKFreq >> 6) + (MCLKFreq >> 7) + (MCLKFreq >> 9));
+   volatile uint16_t i, j;
 
     //wait 1 ms till enable USB 
     for(j = 0; j < 4; j++)
@@ -327,7 +326,7 @@ void PWRVBUSonHandler(void)
         for (i = 0; i < (DelayConstant_250us); i++){
             _NOP();
         }
-    }
+   }
     if (USBPWRCTL & USBBGVBV)                //Checking for USB Bandgap and VBUS valid before modifying USBPWRCTL
     {
         USBKEYPID =  0x9628;                // set KEY and PID to 0x9628 -> access to configuration registers enabled
@@ -363,17 +362,17 @@ uint8_t OEP0InterruptHandler(void)
         usbReceiveNextPacketOnOEP0();
         if(bStatusAction == STATUS_ACTION_NOTHING)
         {
-            #ifdef _CDC_
+#           ifdef _CDC_
                 if(tSetupPacket.bRequest == USB_CDC_SET_LINE_CODING)
                 {
                     bWakeUp = Handler_SetLineCoding();
                 }
-            #endif
-            #ifdef _HID_
+#          endif
+#ifdef _HID_
                 if (tSetupPacket.bRequest == USB_REQ_SET_REPORT) {
                     bWakeUp = USBHID_handleEP0SetReportDataAvailable(tSetupPacket.wIndex);
                 }
-            #endif
+#endif
           }
     }
     else

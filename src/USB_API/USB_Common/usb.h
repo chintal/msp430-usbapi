@@ -40,6 +40,8 @@ extern "C"
 {
 #endif
 
+#include <stdint.h>
+    
 /*----------------------------------------------------------------------------+
  | Constant Definition                                                         |
  +----------------------------------------------------------------------------*/
@@ -50,65 +52,32 @@ extern "C"
 #define __no_init_usb   __no_init
 #endif
 
-/*----------------------------------------------------------------------------
- * The following macro names and function names are deprecated.  These were 
- * updated to new names to follow OneMCU naming convention.
- +---------------------------------------------------------------------------*/
-
-#ifndef DEPRECATED
-#define  kUSB_succeed                        USB_SUCCEED
-#define  kUSB_generalError                   USB_GENERAL_ERROR
-#define  kUSB_notEnabled                     USB_NOT_ENABLED
-#define  kUSB_vbusPresent                    USB_VBUS_PRESENT
-#define  kUSB_busActive                      USB_BUS_ACTIVE
-#define  kUSB_ConnectNoVBUS                  USB_CONNECT_NO_VBUS
-#define  kUSB_suspended                      USB_SUSPENDED
-#define  kUSB_NotSuspended                   USB_NOT_SUSPENDED
-#define  kUSB_Enumerated                     USB_ENUMERATED
-#define  kUSB_purHigh                        USB_PUR_HIGH
-#define  kUSB_clockFaultEvent                USB_CLOCK_FAULT_EVENT
-#define  kUSB_VbusOnEvent                    USB_VBUS_ON_EVENT
-#define  kUSB_VbusOffEvent                   USB_VBUS_OFF_EVENT
-#define  kUSB_UsbResetEvent                  USB_RESET_EVENT
-#define  kUSB_UsbSuspendEvent                USB_SUSPENDED_EVENT
-#define  kUSB_UsbResumeEvent                 USB_RESUME_EVENT
-#define  kUSB_dataReceivedEvent              USB_DATA_RECEIVED_EVENT
-#define  kUSB_sendCompletedEvent             USB_SEND_COMPLETED_EVENT
-#define  kUSB_receiveCompletedEvent          USB_RECEIVED_COMPLETED_EVENT
-#define  kUSB_allUsbEvents                   USB_ALL_USB_EVENTS
-
-#define   USB_connectionInfo                 USB_getConnectionInformation
-#define   USB_connectionState  	             USB_getConnectionState
-#define   USB_handleEnumCompleteEvent        USB_handleEnumerationCompleteEvent
-#endif
-
-
 #define FALSE   0
 #define TRUE    1
 
 #define USB_RETURN_DATA_LENGTH  8
 #define SIZEOF_DEVICE_REQUEST   0x08
 
-//Bit definitions for DEVICE_REQUEST.bmRequestType
-//Bit 7:   Data direction
+// Bit definitions for DEVICE_REQUEST.bmRequestType
+// Bit 7:   Data direction
 #define USB_REQ_TYPE_OUTPUT     0x00    //0 = Host sending data to device
 #define USB_REQ_TYPE_INPUT      0x80    //1 = Device sending data to host
 
-//Bit 6-5: Type
+// Bit 6-5: Type
 #define USB_REQ_TYPE_MASK       0x60    //Mask value for bits 6-5
 #define USB_REQ_TYPE_STANDARD   0x00    //00 = Standard USB request
 #define USB_REQ_TYPE_CLASS      0x20    //01 = Class specific
 #define USB_REQ_TYPE_VENDOR     0x40    //10 = Vendor specific
 
-//Bit 4-0: Recipient
+// Bit 4-0: Recipient
 #define USB_REQ_TYPE_RECIP_MASK 0x1F    //Mask value for bits 4-0
 #define USB_REQ_TYPE_DEVICE     0x00    //00000 = Device
 #define USB_REQ_TYPE_INTERFACE  0x01    //00001 = Interface
 #define USB_REQ_TYPE_ENDPOINT   0x02    //00010 = Endpoint
 #define USB_REQ_TYPE_OTHER      0x03    //00011 = Other
 
-//Values for DEVICE_REQUEST.bRequest
-//Standard Device Requests
+// Values for DEVICE_REQUEST.bRequest
+// Standard Device Requests
 #define USB_REQ_GET_STATUS              0
 #define USB_REQ_CLEAR_FEATURE           1
 #define USB_REQ_SET_FEATURE             3
@@ -121,12 +90,12 @@ extern "C"
 #define USB_REQ_SET_INTERFACE           11
 #define USB_REQ_SYNCH_FRAME             12
 
-//CDC CLASS Requests
+// CDC CLASS Requests
 #define USB_CDC_GET_LINE_CODING         0x21
 #define USB_CDC_SET_LINE_CODING         0x20
 #define USB_CDC_SET_CONTROL_LINE_STATE  0x22
 
-//HID CLASS Requests
+// HID CLASS Requests
 #define USB_HID_REQ                     0x81
 #define USB_REQ_GET_REPORT              0x01
 #define USB_REQ_GET_IDLE                0x02
@@ -135,14 +104,14 @@ extern "C"
 #define USB_REQ_SET_PROTOCOL            0x0B
 #define USB_REQ_GET_PROTOCOL            0x03
 
-//MSC CLASS Requests
+// MSC CLASS Requests
 #define USB_MSC_RESET_BULK              0xFF
 #define USB_MSC_GET_MAX_LUN             0xFE
 
 // PHDC CLASS Requests
 #define USB_PHDC_GET_STATUS             0x00
 
-//HID Values for HID Report Types (tSetup.bValueH)
+// HID Values for HID Report Types (tSetup.bValueH)
 #define USB_REQ_HID_INPUT               0x01
 #define USB_REQ_HID_OUTPUT              0x02
 #define USB_REQ_HID_FEATURE             0x03
@@ -151,7 +120,7 @@ extern "C"
 #define USB_REQ_HID_REPORT_PROTOCOL     0x01
 
 
-//Descriptor Type Values
+// Descriptor Type Values
 #define DESC_TYPE_DEVICE                1       //Device Descriptor (Type 1)
 #define DESC_TYPE_CONFIG                2       //Configuration Descriptor (Type 2)
 #define DESC_TYPE_STRING                3       //String Descriptor (Type 3)
@@ -164,18 +133,18 @@ extern "C"
 #define DESC_TYPE_REPORT                0x22    //Report Descriptor
 #define DESC_TYPE_PHYSICAL              0x23    //Physical Descriptor
 
-//Feature Selector Values
+// Feature Selector Values
 #define FEATURE_REMOTE_WAKEUP           1       //Remote wakeup (Type 1)
 #define FEATURE_ENDPOINT_STALL          0       //Endpoint stall (Type 0)
 
-//Device Status Values
+// Device Status Values
 #define DEVICE_STATUS_REMOTE_WAKEUP     0x02
 #define DEVICE_STATUS_SELF_POWER        0x01
 
-//Maximum descriptor size
+// Maximum descriptor size
 #define MAX_DESC_SIZE                   256
 
-//DEVICE_DESCRIPTOR structure
+// DEVICE_DESCRIPTOR structure
 #define SIZEOF_DEVICE_DESCRIPTOR        0x12
 #define OFFSET_DEVICE_DESCRIPTOR_VID_L  0x08
 #define OFFSET_DEVICE_DESCRIPTOR_VID_H  0x09
@@ -184,35 +153,35 @@ extern "C"
 #define OFFSET_CONFIG_DESCRIPTOR_POWER  0x07
 #define OFFSET_CONFIG_DESCRIPTOR_CURT   0x08
 
-//CONFIG_DESCRIPTOR structure
+// CONFIG_DESCRIPTOR structure
 #define SIZEOF_CONFIG_DESCRIPTOR 0x09
 
-//HID DESCRIPTOR structure
-//#define SIZEOF_HID_DESCRIPTOR 0x09
+// HID DESCRIPTOR structure
+#define SIZEOF_HID_DESCRIPTOR 0x09
 
-//Bit definitions for CONFIG_DESCRIPTOR.bmAttributes
+// Bit definitions for CONFIG_DESCRIPTOR.bmAttributes
 #define CFG_DESC_ATTR_SELF_POWERED  0x40    //Bit 6: If set, device is self powered
 #define CFG_DESC_ATTR_BUS_POWERED   0x80    //Bit 7: If set, device is bus powered
 #define CFG_DESC_ATTR_REMOTE_WAKE   0x20    //Bit 5: If set, device supports remote wakeup
 
-//INTERFACE_DESCRIPTOR structure
+// INTERFACE_DESCRIPTOR structure
 #define SIZEOF_INTERFACE_DESCRIPTOR 0x09
 
-//ENDPOINT_DESCRIPTOR structure
+// ENDPOINT_DESCRIPTOR structure
 #define SIZEOF_ENDPOINT_DESCRIPTOR 0x07
 
-//Bit definitions for EndpointDescriptor.EndpointAddr
+// Bit definitions for EndpointDescriptor.EndpointAddr
 #define EP_DESC_ADDR_EP_NUM     0x0F        //Bit 3-0: Endpoint number
 #define EP_DESC_ADDR_DIR_IN     0x80        //Bit 7: Direction of endpoint, 1/0 = In/Out
 
-//Bit definitions for EndpointDescriptor.EndpointFlags
+// Bit definitions for EndpointDescriptor.EndpointFlags
 #define EP_DESC_ATTR_TYPE_MASK  0x03        //Mask value for bits 1-0
 #define EP_DESC_ATTR_TYPE_CONT  0x00        //Bit 1-0: 00 = Endpoint does control transfers
 #define EP_DESC_ATTR_TYPE_ISOC  0x01        //Bit 1-0: 01 = Endpoint does isochronous transfers
 #define EP_DESC_ATTR_TYPE_BULK  0x02        //Bit 1-0: 10 = Endpoint does bulk transfers
 #define EP_DESC_ATTR_TYPE_INT   0x03        //Bit 1-0: 11 = Endpoint does interrupt transfers
 
-//Definition to indicate valid/invalid data
+// Definition to indicate valid/invalid data
 #define DATA_VALID      1
 #define DATA_INVALID    0
 
@@ -277,9 +246,9 @@ extern uint8_t bEnumerationStatus;
 extern uint8_t bFunctionSuspended;
 
 //Function return values
-#define USB_SUCCEED         0x00
-#define USB_GENERAL_ERROR   0x01
-#define USB_NOT_ENABLED     0x02
+#define USB_SUCCEED          0x00
+#define USB_GENERAL_ERROR    0x01
+#define USB_NOT_ENABLED      0x02
 //#define kUSB_VbusNotPresent 0x03
 
 //return values USB_getConnectionInformation(), USB_connect()
