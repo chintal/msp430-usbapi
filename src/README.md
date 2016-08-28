@@ -1,3 +1,17 @@
+Deprecated Copy
+===============
+
+This version is superceded by significantly refactored one that is (for now)
+inseparably integratrated into HAL based projects. This version is only kept
+around as a somewhat cleaned up copy of the original upstream source, and to
+perhaps (passively) keep an eye on upstream changes.
+
+For the actual usbapi implementation to be used, look instead at 
+https://github.com/chintal/serial-test/tree/master/firmware/hal-cdc-test/src
+
+Note that these two versions are **NOT API COMPATIBLE**. In fact, they're 
+not even close. 
+
 Substantial changes from USB Developers Package
 ===============================================
 
